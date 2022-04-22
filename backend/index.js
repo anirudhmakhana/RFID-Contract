@@ -64,7 +64,7 @@ appBlockChain.use(bodyParser.urlencoded({
     extended: true
 }))
 appBlockChain.use(cors());
-appBlockChain.use('/shipments', shipmentRoute);
+appBlockChain.use('/shipment', shipmentRoute);
 
 
 appBlockChain.listen(4010, () => {

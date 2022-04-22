@@ -16,9 +16,9 @@ const contractAddress = "0xD3Dd4FD11B1Bad20E32436140532869BE2542554"
 const contractABI = abi["abi"]
 const shipmentContract = new web3.eth.Contract(contractABI, contractAddress)
 
-router.route('/get-shipment/:id').get(async (req,res) => {
+router.route('/get-shipment/:id/:address').get(async (req,res) => {
     var temp = await shipmentContract.methods.getProduct(req.params.id).call(
-        { from: "0xf4a6514b99Eac9F938a6441E42F2b985746A7c7D"}
+        { from: req.params.address}
     )
     res.send(200, temp)
 })
@@ -26,10 +26,8 @@ router.route('/get-shipment/:id').get(async (req,res) => {
 
 router.route("/create-shipment/").post(async (req,res) => {
     console.log("req",req.body)
-    const networkId = await web3.eth.net.getId()
-
-    
-    var privateKey = new Buffer(process.env.PRIVATE_KEY, 'hex')  
+    // const networkId = await web3.eth.net.getId()
+    // var privateKey = new Buffer(req.body.walletPrivateKey, 'hex')  
     
     var functionName = 'insert'  
     var types = ['string','string','string','string']  
@@ -39,22 +37,22 @@ router.route("/create-shipment/").post(async (req,res) => {
     var dataHex = signature + coder.encodeParams(types, args)  
     var data = '0x'+dataHex  
 
-    var txcount = await web3.eth.getTransactionCount('0xf4a6514b99Eac9F938a6441E42F2b985746A7c7D')
+    var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey)
     var nonce = web3.utils.toHex(txcount)  
     console.log(txcount)
     var gasPrice = web3.utils.toHex(web3.eth.gasPrice)
     // var gPrice = await web3.eht.getGasPrice()
     var gasLimitHex = web3.utils.toHex(600000)
-    var rawTx = { 'nonce': nonce, 'gasPrice': gasPrice, 'gasLimit': gasLimitHex, 'from': '0xf4a6514b99Eac9F938a6441E42F2b985746A7c7D', 'to': '0xD3Dd4FD11B1Bad20E32436140532869BE2542554', 'data': data}  
-    var tx = new Tx(rawTx, {chain:"rinkeby"})  
+    var rawTx = { 'nonce': nonce, 'gasPrice': gasPrice, 'gasLimit': gasLimitHex, 'from': req.body.walletPublicKey, 'to': contractAddress, 'data': data}  
+    // var tx = new Tx(rawTx, {chain:"rinkeby"})  
     // var gas = await tx.estimateGas({from:'0xd7a5506dB374d05EcBA383c5b25fD7e32CBA54a8'})
 
-    var temp = await tx.sign(privateKey)  
-    var serializedTx = '0x'+tx.serialize().toString('hex')  
-    var signedTx = await web3.eth.accounts.signTransaction(
-        rawTx,
-        process.env.PRIVATE_KEY
-    )
+    // var temp = await tx.sign(privateKey)  
+    // var serializedTx = '0x'+tx.serialize().toString('hex')  
+    // var signedTx = await web3.eth.accounts.signTransaction(
+    //     rawTx,
+    //     req.body.walletPrivateKey
+    // )
     
     // var result = await shipmentContract.methods.insert(req.body.uid, req.body.productName, req.body.producerName, req.body.shipmentStatus).send(
     //     { from: "0xd7a5506dB374d05EcBA383c5b25fD7e32CBA54a8"}
@@ -68,6 +66,7 @@ router.route("/create-shipment/").post(async (req,res) => {
     }catch(error) {
             console.log(error)
         }
+    
 })
 
 module.exports = router;
