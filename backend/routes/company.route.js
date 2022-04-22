@@ -46,6 +46,20 @@ router.route("/").get((req, res) => {
     // } )
 })
 
+router.route("/:companycode").get((req, res) => {
+    const query = "SELECT * FROM companies WHERE companyCode = ?"
+    connection.query( query,[req.params.companycode], (error, results) => {
+        if (error) {
+            res.json( {status: "error", reason: error})
+        }
+        else if ( results.length < 1) {
+            res.json( {status: "No company found!"});
+        } else {
+            res.json(results[0])
+        }
+    })
+})
+
 // create companies
 router.route("/").post( async (req, res) => {
     const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
