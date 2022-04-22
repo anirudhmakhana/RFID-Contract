@@ -1,23 +1,56 @@
-let mongoose = require('mongoose'),
-    express = require('express'),
+let express = require('express'),
     router = express.Router()
     bcrypt = require('bcrypt'),
     SALT_WORK_FACTOR = 10
+    jwt = require('jsonwebtoken')
 
-const   createError = require('http-errors');
+const JWT_SECRET = 'sdjkfh8923yhjdksbfma@#*(&@*!^#&@bhjb2qiuhesdbhjdsfg839ujkdhfjk'
+const createError = require('http-errors');
+const mysql = require('mysql')
 
-var ObjectId = require('mongoose').Types.ObjectId; 
-let adminAccountSchema = require("../models/AdminAccount")
+const connection = mysql.createConnection( {
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database:'company_user_data',
+    port: 8889
+})
+
+connection.connect((err) => {
+    if (err) {
+        console.log("MySQL connection error : ", err)
+        return 
+    }
+    console.log("MySQL successfully connected.")
+})
+
+// const pool = mysql.createPool({
+//     user: process.env.DB_USER,
+//     password: process.env.DB_PASS,
+//     database: process.env.DB_NAME,
+//     socketPath: `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`,
+// })
 
 // Read accounts
 router.route("/").get((req, res) => {
-    adminAccountSchema.find((error, data) => {
+    const query = "SELECT * FROM adminAccounts"
+    connection.query( query, (error, results) => {
         if (error) {
-            return next(error);
-        } else {
-            res.json(data);
+            res.json( {status: "error", reason: error})
         }
-    } )
+        else if ( results.length < 1) {
+            res.json( {status: "No admin account found!"});
+        } else {
+            res.json(results)
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
 })
 
 // register admin account
@@ -40,42 +73,55 @@ router.route("/register").post( async (req, res) => {
 	}
     const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
 
-    try {
-        const result = await adminAccountSchema.create({
-            username,
-            password
-        })
-        console.log('Account created successfully!', result)
-    } catch (error) {
-        if ( error.code === 11000) {
-            return res.json({status:'error', error: "Username already in use."})
-        }
-        throw error
+    // try {
+    const data = {
+        username: username,
+        password: password
     }
-    res.json({status:200})
+    const query = "INSERT INTO adminAccounts VALUES (?, ?);"
+    connection.query(query, Object.values(data), (error) => {
+        if (error) {
+            res.json( {status: "error", reason: error.code})
+            console.log("error", error)
+        } else {
+            res.json( {status: 200, data: data})
+            console.log('Account created successfully!', data)
+        }
+    })
+    console.log('Data : ', data)
+
+    // } catch (error) {
+    //     if ( error.code === 11000) {
+    //         return res.json({status:'error', error: "Username already in use."})
+    //     }
+    //     throw error
+    // }
+    // res.json({status:200})
 
 })
-router.route('/login').post( async (req,res) => {
-    const { username, password } = req.body
-	const user = await User.findOne({ username }).lean()
+// router.route('/login').post( async (req,res) => {
+//     const { username, password } = req.body
+// 	const user = await User.findOne({ username }).lean()
 
-	if (!user) {
-		return res.json({ status: 'error', error: 'User not existed' })
-	}
+// 	if (!user) {
+// 		return res.json({ status: 'error', error: 'User not existed' })
+// 	}
 
-	if (await bcrypt.compare(password, user.password)) {
-		// the username, password combination is successful
+// 	if (await bcrypt.compare(password, user.password)) {
+// 		// the username, password combination is successful
 
-		const token = jwt.sign(
-			{
-				id: user._id,
-				username: user.username
-			},
-			JWT_SECRET
-		)
+// 		const token = jwt.sign(
+// 			{
+// 				id: user._id,
+// 				username: user.username
+// 			},
+// 			JWT_SECRET
+// 		)
 
-		return res.json({ status: 'ok', data: token })
-	}
+// 		return res.json({ status: 'ok', data: token })
+// 	}
 
-	res.json({ status: 'error', error: 'Invalid password' })
-})
+// 	res.json({ status: 'error', error: 'Invalid password' })
+// })
+
+module.exports = router;

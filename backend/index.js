@@ -13,20 +13,20 @@ let express = require('express'),
 const companyRoute = require('../backend/routes/company.route');
 const adminRoute = require('../backend/routes/admin.route');
 const shipmentRoute = require('../backend/routes/shipment.route');
+const staffRoute = require('../backend/routes/staff.route')
 
-
-// Connecting MongoDB 
-mongoose.Promise = global.Promise;
-// console.log("check", process.env)
-mongoose.connect(dbConfig.db, {
-    useNewUrlParser: true
-}).then( () => {
-    console.log('Database successfully connected');
-},
-    error => {
-        console.log('Could not connect to database: ' + error);
-    }
-)
+// // Connecting MongoDB 
+// mongoose.Promise = global.Promise;
+// // console.log("check", process.env)
+// mongoose.connect(dbConfig.db, {
+//     useNewUrlParser: true
+// }).then( () => {
+//     console.log('Database successfully connected');
+// },
+//     error => {
+//         console.log('Could not connect to database: ' + error);
+//     }
+// )
 
 const app = express();
 app.use(bodyParser.json());
@@ -34,8 +34,9 @@ app.use(bodyParser.urlencoded({
     extended: true
 }))
 app.use(cors());
-app.use('/companies', companyRoute);
+app.use('/company', companyRoute);
 app.use('/admin', adminRoute)
+app.use('/staff', staffRoute)
 
 // PORT
 const port = process.env.PORT || 4000;

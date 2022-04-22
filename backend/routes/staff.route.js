@@ -24,15 +24,15 @@ connection.connect((err) => {
     console.log("MySQL successfully connected.")
 })
 
-// Read companies
+// Read accounts
 router.route("/").get((req, res) => {
-    const query = "SELECT * FROM companies"
+    const query = "SELECT * FROM staffAccounts"
     connection.query( query, (error, results) => {
         if (error) {
             res.json( {status: "error", reason: error})
         }
         else if ( results.length < 1) {
-            res.json( {status: "No company found!"});
+            res.json( {status: "No staff account found!"});
         } else {
             res.json(results)
         }
@@ -46,18 +46,35 @@ router.route("/").get((req, res) => {
     // } )
 })
 
-// create companies
-router.route("/create").post( async (req, res) => {
-    const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
-             walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
+// register staff account
+router.route("/register").post( async (req, res) => {
+    const { username: username, password: plainTextPassword, fullName: fullName, contactNumber: contactNumber, companyCode: companyCode} = req.body
+
+    if (!username || typeof username !== 'string') {
+		return res.json({ status: 'error', error: 'Invalid username' })
+	}
+
+	if (!plainTextPassword || typeof plainTextPassword !== 'string') {
+		return res.json({ status: 'error', error: 'Invalid password' })
+	}
+
+	if (plainTextPassword.length < 5) {
+		return res.json({
+			status: 'error',
+			error: 'Password should be atleast 6 characters'
+		})
+	}
+    const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
 
     // try {
-    const data = { companyCode: companyCode, 
-        companyName: companyName, 
-        managerContact: managerContact, 
-        walletPublicKey: walletPublicKey, 
-        walletPrivateKey: walletPrivateKey}
-    const query = "INSERT INTO companies VALUES (?, ?, ?, ?, ?);"
+    const data = {
+        username: username,
+        password: password,
+        fullName: fullName, 
+        contactNumber: contactNumber, 
+        companyCode: companyCode
+    }
+    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?);"
     connection.query(query, Object.values(data), (error) => {
         if (error) {
             res.json( {status: "error", reason: error.code})
