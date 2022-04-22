@@ -1,13 +1,13 @@
+require('dotenv').config({path:'../../.env'})
 let express = require('express'),
     router = express.Router()
     bcrypt = require('bcrypt'),
     SALT_WORK_FACTOR = 10
     jwt = require('jsonwebtoken')
 
-const JWT_SECRET = 'sdjkfh8923yhjdksbfma@#*(&@*!^#&@bhjb2qiuhesdbhjdsfg839ujkdhfjk'
 const createError = require('http-errors');
 const mysql = require('mysql')
-
+const auth = require('../utils/auth')
 const connection = mysql.createConnection( {
     host: 'localhost',
     user: 'root',
@@ -25,7 +25,7 @@ connection.connect((err) => {
 })
 
 // Read companies
-router.route("/").get((req, res) => {
+router.route("/").get(auth, (req, res) => {
     const query = "SELECT * FROM companies"
     connection.query( query, (error, results) => {
         if (error) {
@@ -46,7 +46,7 @@ router.route("/").get((req, res) => {
     // } )
 })
 
-router.route("/:companycode").get((req, res) => {
+router.route("/:companycode").get(auth, (req, res) => {
     const query = "SELECT * FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
         if (error) {
@@ -61,7 +61,7 @@ router.route("/:companycode").get((req, res) => {
 })
 
 // create companies
-router.route("/").post( async (req, res) => {
+router.route("/").post(auth, async (req, res) => {
     const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
              walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
 

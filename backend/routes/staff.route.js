@@ -1,10 +1,10 @@
+require('dotenv').config({path:'../../.env'})
 let express = require('express'),
     router = express.Router()
     bcrypt = require('bcrypt'),
     SALT_WORK_FACTOR = 10
     jwt = require('jsonwebtoken')
 
-const JWT_SECRET = 'sdjkfh8923yhjdksbfma@#*(&@*!^#&@bhjb2qiuhesdbhjdsfg839ujkdhfjk'
 const createError = require('http-errors');
 const mysql = require('mysql')
 
@@ -117,12 +117,15 @@ router.route('/login').post( async (req,res) => {
         
                 const token = jwt.sign(
                     {
-                        username: username
+                        username: username,
                     },
-                    JWT_SECRET
+                    process.env.TOKEN_KEY
                 )
         
-                return res.json({ status: 'ok', token: token })
+                // return res.json({ status: 'ok', token: token })
+                user.token = token
+
+                return res.status(200).json(user)
             }
         
             res.json({ status: 'error', error: 'Invalid password' })
