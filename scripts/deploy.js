@@ -31,8 +31,8 @@ async function main() {
   console.log(receiptInsert.events[0].args._uid.toString());
 
   const getProducttxn = await rfid.getProduct("TEST123");
-  const receiptGetProduct = await getProducttxn.wait();
-  console.log(receiptGetProduct);
+  // const receiptGetProduct = await getProducttxn.wait();
+  console.log(getProducttxn);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
