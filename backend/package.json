@@ -20,8 +20,8 @@
     "ethereumjs-tx": "^2.1.2",
     "express": "^4.17.3",
     "hardhat": "^2.9.3",
-    "mongoose": "^6.3.0",
-    "truffle-hdwallet-provider": "^1.0.17"
+    "http-errors": "^2.0.0",
+    "mongoose": "^6.3.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
