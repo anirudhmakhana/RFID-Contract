@@ -16,15 +16,16 @@ const contractAddress = "0xD3Dd4FD11B1Bad20E32436140532869BE2542554"
 const contractABI = abi["abi"]
 const shipmentContract = new web3.eth.Contract(contractABI, contractAddress)
 
-router.route('/get-shipment/:id/:address').get(async (req,res) => {
+//get shipment by id and wallet address(publickey)
+router.route('/:id/:address').get(async (req,res) => {
     var temp = await shipmentContract.methods.getProduct(req.params.id).call(
         { from: req.params.address}
     )
     res.send(200, temp)
 })
 
-
-router.route("/create-shipment/").post(async (req,res) => {
+//create shipment
+router.route("/").post(async (req,res) => {
     console.log("req",req.body)
     // const networkId = await web3.eth.net.getId()
     // var privateKey = new Buffer(req.body.walletPrivateKey, 'hex')  

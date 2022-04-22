@@ -47,7 +47,7 @@ router.route("/").get((req, res) => {
 })
 
 // create companies
-router.route("/create").post( async (req, res) => {
+router.route("/").post( async (req, res) => {
     const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
              walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
 
