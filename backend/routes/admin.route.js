@@ -99,29 +99,41 @@ router.route("/register").post( async (req, res) => {
     // res.json({status:200})
 
 })
-// router.route('/login').post( async (req,res) => {
-//     const { username, password } = req.body
-// 	const user = await User.findOne({ username }).lean()
 
-// 	if (!user) {
-// 		return res.json({ status: 'error', error: 'User not existed' })
-// 	}
+// login as admin
+router.route('/login').post( async (req,res) => {
+    const { username, password } = req.body
+    const query = "SELECT * FROM adminAccounts WHERE username = ?"
+    connection.query( query,[username], async (error, results) => {
+        if (error) {
+            res.json( {status: "error", reason: error})
+        }
+        else if ( results.length < 1) {
+            res.json( {status: "No admin account found!"});
+        } else {
+            user = results[0]
+            if (!user) {
+                return res.json({ status: 'error', error: 'User not existed' })
+            }
+        
+            if (await bcrypt.compare(password, user['password'])) {
+                // the username, password combination is successful
+        
+                const token = jwt.sign(
+                    {
+                        username: username
+                    },
+                    JWT_SECRET
+                )
+        
+                return res.json({ status: 'ok', token: token })
+            }
+        
+            res.json({ status: 'error', error: 'Invalid password' })
+        }
+    })
 
-// 	if (await bcrypt.compare(password, user.password)) {
-// 		// the username, password combination is successful
-
-// 		const token = jwt.sign(
-// 			{
-// 				id: user._id,
-// 				username: user.username
-// 			},
-// 			JWT_SECRET
-// 		)
-
-// 		return res.json({ status: 'ok', data: token })
-// 	}
-
-// 	res.json({ status: 'error', error: 'Invalid password' })
-// })
+	
+})
 
 module.exports = router;
