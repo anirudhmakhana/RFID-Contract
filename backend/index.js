@@ -11,6 +11,7 @@ let express = require('express'),
 
 //Express route
 const companyRoute = require('../backend/routes/company.route');
+const adminRoute = require('../backend/routes/admin.route');
 const shipmentRoute = require('../backend/routes/shipment.route');
 
 
@@ -34,6 +35,7 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(cors());
 app.use('/companies', companyRoute);
+app.use('/admin', adminRoute)
 
 // PORT
 const port = process.env.PORT || 4000;
