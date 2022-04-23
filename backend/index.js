@@ -67,11 +67,6 @@ appBlockChain.use(
 appBlockChain.use(cors());
 appBlockChain.use("/shipments", shipmentRoute);
 
-appBlockChain.post("/create-shipment/", async (req, res) => {
-  console.log("req", req.body);
-  const networkId = await web3.eth.net.getId();
-
-  appBlockChain.listen(4010, () => {
-    console.log("Connected to port " + 4010);
-  });
+appBlockChain.listen(4010, () => {
+  console.log("Connected to port " + 4010);
 });
