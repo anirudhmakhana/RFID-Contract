@@ -1,151 +1,97 @@
-let mongoose = require('mongoose'),
-    express = require('express'),
+require('dotenv').config({path:'../../.env'})
+let express = require('express'),
     router = express.Router()
-const   createError = require('http-errors');
+    bcrypt = require('bcrypt'),
+    SALT_WORK_FACTOR = 10
+    jwt = require('jsonwebtoken')
 
-var ObjectId = require('mongoose').Types.ObjectId; 
-let companySchema = require("../models/Company")
+const createError = require('http-errors');
+const mysql = require('mysql')
+const auth = require('../utils/auth')
+const connection = mysql.createConnection( {
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database:'company_user_data',
+    port: 8889
+})
 
-router.route('/create-company').post((req, res, next) => {
-    companySchema.create(req.body, (error, data) => {
-        if (error ) {
-            return next(error);
-        }
-        else {
-            console.log(data);
-            res.json(data);
-        }
-    })
+connection.connect((err) => {
+    if (err) {
+        console.log("MySQL connection error : ", err)
+        return 
+    }
+    console.log("MySQL successfully connected.")
 })
 
 // Read companies
-router.route("/").get((req, res) => {
-    companySchema.find((error, data) => {
+router.route("/").get(auth, (req, res) => {
+    const query = "SELECT * FROM companies"
+    connection.query( query, (error, results) => {
         if (error) {
-            return next(error);
-        } else {
-            res.json(data);
+            res.json( {status: "error", reason: error})
         }
-    } )
+        else if ( results.length < 1) {
+            res.json( {status: "No company found!"});
+        } else {
+            res.json(results)
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
 })
 
-// Get single company
-router.route("/get-company/:id").get((req,res) => {
-     companySchema.findById(req.params.id, (error, data) => {
-         if (error) {
-             return next(error);
-         } else {
-             res.json(data);
-         }
-     })
-})
-
-// Find company by account
-router.route("/get-company-by-account/:acckey").get((req, res) => {
-    companySchema.findOne({"staffs.walletAddress":req.params.acckey}, (error, data ) => {
+router.route("/:companycode").get(auth, (req, res) => {
+    const query = "SELECT * FROM companies WHERE companyCode = ?"
+    connection.query( query,[req.params.companycode], (error, results) => {
         if (error) {
-            return next(error);
+            res.json( {status: "error", reason: error})
+        }
+        else if ( results.length < 1) {
+            res.json( {status: "No company found!"});
         } else {
-            console.log(data)
-            res.json(data);
+            res.json(results[0])
         }
     })
 })
 
-// Find staff by id
-router.route("/get-staff/:staffid").get((req, res) => {
-    companySchema.findOne({"staffs._id":new ObjectId(req.params.staffid)}, (error, data ) => {
+// create companies
+router.route("/").post(auth, async (req, res) => {
+    const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
+             walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
+
+    // try {
+    const data = { companyCode: companyCode, 
+        companyName: companyName, 
+        managerContact: managerContact, 
+        walletPublicKey: walletPublicKey, 
+        walletPrivateKey: walletPrivateKey}
+    const query = "INSERT INTO companies VALUES (?, ?, ?, ?, ?);"
+    connection.query(query, Object.values(data), (error) => {
         if (error) {
-            return next(error);
+            res.json( {status: "error", reason: error.code})
+            console.log("error", error)
         } else {
-            console.log(data)
-            var temp;
-            data["staffs"].forEach((s) => {
-                if (s._id.equals(req.params.staffid)) {
-                    temp = s
-                }
-            })
-            console.log('test',temp);
-            res.json(temp);
+            res.json( {status: 200, data: data})
+            console.log('Account created successfully!', data)
         }
     })
+    console.log('Data : ', data)
+
+    // } catch (error) {
+    //     if ( error.code === 11000) {
+    //         return res.json({status:'error', error: "Username already in use."})
+    //     }
+    //     throw error
+    // }
+    // res.json({status:200})
+
 })
 
-// Add staff
-router.route("/add-staff/:id").put((req, res, next) => {
-    companySchema.findByIdAndUpdate(req.params.id, {
-        $push: {
-            staffs: req.body
-        }
-    }, (error, data) => {
-        if (error ) {
-            console.log(error);
-            return next(error);
-        } else {
-            res.json(data);
-            console.log("Staff added successfully")
-        }
-    })
-})
-
-//// Add distribution center
-router.route("/add-dist-center/:id").put((req, res, next) => {
-    companySchema.findByIdAndUpdate(req.params.id, {
-        $push: {
-            distCenters: req.body
-        }
-    }, (error, data) => {
-        if (error ) {
-            console.log(error);
-            return next(error);
-        } else {
-            res.json(data);
-            console.log("Distribution center added successfully")
-        }
-    })
-})
-
-// Update company
-router.route('/update-company/:id').put((req, res, next) => {
-    companySchema.findByIdAndUpdate(req.params.id, {
-        $set: req.body
-    }, (error, data) => {
-        if (error ) {
-            console.log(error);
-            return next(error);
-        } else {
-            res.json(data);
-            console.log("Company updated successfully")
-        }
-    })
-})
-
-// Delete company
-router.route('/delete-company/:id').delete((req, res, next ) => {
-    companySchema.findByIdAndRemove( req.params.id, (error, data) => {
-        if (error) {
-            return next(error);
-        } else {
-            res.status(200).json ({
-                msg: data
-            })
-        }
-    })
-})
-
-// Delete publicKey
-router.route('/delete-staff/:id/:staffid').put((req, res, next ) => {
-    console.log(typeof req.params.staffid)
-    companySchema.findByIdAndUpdate(req.params.id, 
-        {$pull: {"staffs":{_id:new ObjectId(req.params.staffid)}}} , (error, data) => {
-        if (error) {
-            return next(error);
-        } else {
-            res.status(200).json ({
-                msg: data
-            })
-        }
-    })
-})
 
 module.exports = router;
