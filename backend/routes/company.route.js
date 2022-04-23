@@ -95,5 +95,18 @@ router.route("/").post(admin_auth, async (req, res) => {
 
 })
 
+router.route("/:companycode").delete(admin_auth, (req, res) => {
+    const query = "DELETE FROM companies WHERE companyCode = ?"
+    connection.query( query,[req.params.companycode], (error, results) => {
+        if (error) {
+            res.json( {status: "error", reason: error})
+        }
+        else if ( results.length < 1) {
+            res.json( {status: "No company found!"});
+        } else {
+            res.json({status:200, message:`Company ${req.params.companycode} is deleted.`})
+        }
+    })
+})
 
 module.exports = router;
