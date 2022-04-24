@@ -7,7 +7,7 @@ const HDWalletProvider = require("@truffle/hdwallet-provider");
 const abi = require("../utils/TrackingContract.json");
 const Contract = require("web3-eth-contract");
 const provider = new HDWalletProvider(
-  [process.env.PRIVATE_KEY],
+  [process.env.PRIVATE_KEY, process.env.PRIVATE_KEY_TWO],
   "https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b"
 );
 const web3 = new Web3(provider);
