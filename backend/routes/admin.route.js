@@ -120,14 +120,15 @@ router.route('/login').post( async (req,res) => {
             if (await bcrypt.compare(password, user['password'])) {
                 // the username, password combination is successful
         
-                const token = jwt.sign(
+                const admin_token = jwt.sign(
                     {
                         username: username
                     },
-                    process.env.TOKEN_KEY
+                    process.env.ADMIN_TOKEN_KEY
                 )
-        
-                return res.json({ status: 'ok', token: token })
+                user.token = admin_token
+
+                return res.status(200).json(user)
             }
         
             res.json({ status: 'error', error: 'Invalid password' })
