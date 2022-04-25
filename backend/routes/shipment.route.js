@@ -22,7 +22,7 @@ router.route('/:id/:address').get(auth, async (req,res) => {
     var temp = await shipmentContract.methods.getProduct(req.params.id).call(
         { from: req.params.address}
     )
-    res.send(200, temp)
+    res.status(200).json( temp)
 })
 
 //create shipment
@@ -61,11 +61,12 @@ router.route("/").post(auth, async (req,res) => {
     // )
     try
     {      
-        var result = await web3.eth.sendTransaction(rawTx, function(err, txHash){ res.send(200,{err, txHash}) })
+        var result = await web3.eth.sendTransaction(rawTx, function(err, txHash){ res.status(200).json({error:err, transactionHash:txHash}) })
         // var result = await web3.eth.sendSignedTransaction(serializedTx, function(err, txHash){ console.log(err, txHash) })   
 
         // console.log(web3.eth.getTransaction(result))
     }catch(error) {
+        
             console.log(error)
         }
     

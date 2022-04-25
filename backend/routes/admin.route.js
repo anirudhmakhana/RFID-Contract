@@ -37,12 +37,12 @@ router.route("/").get((req, res) => {
     const query = "SELECT * FROM adminAccounts"
     connection.query( query, (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(error.code).json( {error: error.message})
         }
         else if ( results.length < 1) {
-            res.json( {status: "No admin account found!"});
+            res.status(404).json( {error: "No admin account found!"});
         } else {
-            res.json(results)
+            res.status(200).json(results)
         }
     })
     // adminAccountSchema.find((error, data) => {
@@ -82,10 +82,10 @@ router.route("/register").post( async (req, res) => {
     const query = "INSERT INTO adminAccounts VALUES (?, ?);"
     connection.query(query, Object.values(data), (error) => {
         if (error) {
-            res.json( {status: "error", reason: error.code})
+            res.status(error.code).json( {error: error.message})
             console.log("error", error)
         } else {
-            res.json( {status: 200, data: data})
+            res.status(200).json( data)
             console.log('Account created successfully!', data)
         }
     })
@@ -107,14 +107,12 @@ router.route('/login').post( async (req,res) => {
     const query = "SELECT * FROM adminAccounts WHERE username = ?"
     connection.query( query,[username], async (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(error.code).json( {error: error.message})
         }
-        else if ( results.length < 1) {
-            res.json( {status: "No admin account found!"});
-        } else {
+        else {
             user = results[0]
             if (!user) {
-                return res.json({ status: 'error', error: 'User not existed' })
+                return res.status(404).json({  error: 'Admin account not existed' })
             }
         
             if (await bcrypt.compare(password, user['password'])) {
@@ -131,7 +129,7 @@ router.route('/login').post( async (req,res) => {
                 return res.status(200).json(user)
             }
         
-            res.json({ status: 'error', error: 'Invalid password' })
+            res.status(403).json({ error: 'Invalid password' })
         }
     })
 
