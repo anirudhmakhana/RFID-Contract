@@ -29,7 +29,7 @@ router.route("/").get((req, res) => {
     const query = "SELECT * FROM staffAccounts"
     connection.query( query, (error, results) => {
         if (error) {
-            res.status(error.code).json( {error: error.message})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {status: "No staff account found!"});
@@ -63,27 +63,47 @@ router.route("/register").post( async (req, res) => {
 			error: 'Password should be atleast 6 characters'
 		})
 	}
-    const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
-
-    // try {
-    const data = {
-        username: username,
-        password: password,
-        fullName: fullName, 
-        contactNumber: contactNumber, 
-        companyCode: companyCode
-    }
-    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?);"
-    connection.query(query, Object.values(data), (error) => {
-        if (error) {
-            res.status(error.code).json( error.message )
-            console.log("error", error)
+    const usr = "SELECT * FROM staffAccounts WHERE username = ?"
+    connection.query( usr,[username], (error_user, results) => {
+        if (results[0]) {
+            return res.status(403).json({error:"Username already existed!", res: results})
         } else {
-            res.status(201).json( data)
-            console.log('Account created successfully!', data)
+            const comp = "SELECT * FROM companies WHERE companyCode = ?"
+            connection.query( comp,[companyCode], async (error_comp, results) => {
+                if (error_comp) {
+                    return res.status(400).json( {error: error_comp.message})
+                }
+                else if ( results.length < 1) {
+                    return res.status(404).json( {error_comp: "No company found!"});
+                } else {
+                    const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
+
+                    // try {
+                    const data = {
+                        username: username,
+                        password: password,
+                        fullName: fullName, 
+                        contactNumber: contactNumber, 
+                        companyCode: companyCode
+                    }
+                    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?);"
+                    connection.query(query, Object.values(data), (error) => {
+                        if (error) {
+                            res.status(400).json( error )
+                            console.log("error", error)
+                        } else {
+                            res.status(201).json( data)
+                            console.log('Account created successfully!', data)
+                        }
+                    })
+                    console.log('Data : ', data)
+
+                }
+            })
+            
         }
     })
-    console.log('Data : ', data)
+    
 
     // } catch (error) {
     //     if ( error.code === 11000) {

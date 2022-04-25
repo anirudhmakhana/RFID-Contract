@@ -31,7 +31,7 @@ router.route("/").get(auth, (req, res) => {
     const query = "SELECT * FROM companies"
     connection.query( query, (error, results) => {
         if (error) {
-            res.status(error.code).json( {error: error.message})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No company found!"});
@@ -52,7 +52,7 @@ router.route("/:companycode").get(auth, (req, res) => {
     const query = "SELECT * FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
         if (error) {
-            res.status(error.code).json( {error: error.message})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No company found!"});
@@ -76,7 +76,7 @@ router.route("/").post(admin_auth, async (req, res) => {
     const query = "INSERT INTO companies VALUES (?, ?, ?, ?, ?);"
     connection.query(query, Object.values(data), (error) => {
         if (error) {
-            res.status(error.code).json( {error: error.message})
+            res.status(400).json( {error: error.message})
             console.log("error", error)
         } else {
             res.status(200).json(  data)
@@ -99,7 +99,7 @@ router.route("/:companycode").delete(admin_auth, (req, res) => {
     const query = "DELETE FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
         if (error) {
-            res.status(error.code).json( {error: error.message})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No company found!"});
