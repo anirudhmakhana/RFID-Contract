@@ -9,6 +9,9 @@ module.exports = {
     "standard",
     "plugin:prettier/recommended",
     "plugin:node/recommended",
+    "rules":{     
+      "prettier/prettier": ["error", { "endOfLine": "auto" }] 
+    }
   ],
   parserOptions: {
     ecmaVersion: 12,

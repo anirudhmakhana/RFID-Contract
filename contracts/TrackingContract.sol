@@ -2,21 +2,26 @@
 pragma solidity ^0.8.0;
 
 contract TrackingContract {
-    //create a structure for Product
-    struct Product {
-        string uid;
-        uint256 scannedAt;
-        string productName;
-        string producer;
+
+    //create a structure for scanned
+    struct Details{
+        string scannedAt;
+        uint256 scannedTime;
         string status;
     }
-    //path of type array of distribution center
-    //map with timestamp
+
+    //create a structure for shipment
+    struct Shipment {
+        string uid;
+        Details[] shipmentDetails;
+        string producer;
+    }
 
     //the person trying to make a transaction.
     address public me;
 
-    Product[] public products;
+    //Shipment[] public shipments;
+    mapping(string => Shipment) public shipments;
 
     uint256 public totalTransactions;
 
@@ -25,13 +30,12 @@ contract TrackingContract {
         me = msg.sender;
     }
 
-    event NewScanEvent(
-        address indexed from,
-        uint256 timestamp,
-        string _uid,
-        string _productName,
-        string _producer,
-        string _status
+    event ShipmentDetails(
+        Details[] details
+    );
+
+    event ShipmentProducer(
+        string producer
     );
 
     event StatusUpdated(
@@ -39,56 +43,45 @@ contract TrackingContract {
         string _status
     );
 
+    
     function insert(
         string calldata _uid,
-        string calldata _productName,
         string calldata _producer,
+        string calldata _scannedAt,
         string calldata _status
     ) external returns (uint256) {
-        Product memory newProduct = Product(
-            _uid,
-            block.timestamp,
-            _productName,
-            _producer,
-            _status
-        );
-        products.push(newProduct);
+        Details memory newDetails = Details(_scannedAt, block.timestamp, _status);
+        shipments[_uid].uid = _uid;
+        shipments[_uid].producer = _producer;
+        shipments[_uid].shipmentDetails.push(newDetails);
         totalTransactions++;
-        //emit event
-        emit NewScanEvent(
-            msg.sender,
-            block.timestamp,
-            _uid,
-            _productName,
-            _producer,
-            _status
-        );
+
         return totalTransactions;
     }
 
-    function getProduct(string memory _uid) public view returns(string memory, string memory, string memory){
-        for(uint256 i =0; i< totalTransactions; i++){
-           if(compareStrings(products[i].uid, _uid)){
-              //emit event
-              return (products[i].productName , products[i].producer , products[i].status);
-           }
-       }
-       revert("Product not found");
-   }
+    function getShipmentDetails(string memory _uid) public returns(Details[] memory ){
+        emit ShipmentDetails(shipments[_uid].shipmentDetails);
+        return shipments[_uid].shipmentDetails;
+    }
      
     function compareStrings(string memory a, string memory b) public pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
-    function updateStatus(string memory _uid, string memory newStatus) public returns (bool){
-       //This has a problem we need loop
-       for(uint256 i =0; i< totalTransactions; i++){
-           if(compareStrings(products[i].uid ,_uid)){
-              products[i].status = newStatus;
-              emit StatusUpdated(_uid, newStatus);
-              return true;
-           }
-       }
-       return false;
-   }
+    function updateStatus(string memory _uid, string memory _newStatus, string memory _newScannedAt) public returns (bool){
+        for(uint256 i = 0; i < totalTransactions; i++){
+            if(compareStrings(shipments[_uid].uid, _uid)){
+                Details memory updatedDetails = Details(_newScannedAt, block.timestamp, _newStatus);
+                shipments[_uid].shipmentDetails.push(updatedDetails);
+                return true;
+            }
+        }   
+        return false;
+    }
+
+    function getShipmentProducer(string memory _uid) public returns(string memory){
+        emit ShipmentProducer(shipments[_uid].producer);
+        return shipments[_uid].producer;
+    }
+        
 }
