@@ -29,12 +29,12 @@ router.route("/").get((req, res) => {
     const query = "SELECT * FROM staffAccounts"
     connection.query( query, (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
-            res.json( {status: "No staff account found!"});
+            res.status(404).json( {status: "No staff account found!"});
         } else {
-            res.json(results)
+            res.status(200).json(results)
         }
     })
     // adminAccountSchema.find((error, data) => {
@@ -51,40 +51,59 @@ router.route("/register").post( async (req, res) => {
     const { username: username, password: plainTextPassword, fullName: fullName, contactNumber: contactNumber, companyCode: companyCode} = req.body
 
     if (!username || typeof username !== 'string') {
-		return res.json({ status: 'error', error: 'Invalid username' })
+		return res.status(403).json({ error: 'Invalid username' })
 	}
 
 	if (!plainTextPassword || typeof plainTextPassword !== 'string') {
-		return res.json({ status: 'error', error: 'Invalid password' })
+		return re.status(403).json({ error: 'Invalid password' })
 	}
 
 	if (plainTextPassword.length < 5) {
-		return res.json({
-			status: 'error',
+		return res.status(403).json({
 			error: 'Password should be atleast 6 characters'
 		})
 	}
-    const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
-
-    // try {
-    const data = {
-        username: username,
-        password: password,
-        fullName: fullName, 
-        contactNumber: contactNumber, 
-        companyCode: companyCode
-    }
-    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?);"
-    connection.query(query, Object.values(data), (error) => {
-        if (error) {
-            res.json( {status: "error", reason: error.code})
-            console.log("error", error)
+    const usr = "SELECT * FROM staffAccounts WHERE username = ?"
+    connection.query( usr,[username], (error_user, results) => {
+        if (results[0]) {
+            return res.status(403).json({error:"Username already existed!", res: results})
         } else {
-            res.json( {status: 200, data: data})
-            console.log('Account created successfully!', data)
+            const comp = "SELECT * FROM companies WHERE companyCode = ?"
+            connection.query( comp,[companyCode], async (error_comp, results) => {
+                if (error_comp) {
+                    return res.status(400).json( {error: error_comp.message})
+                }
+                else if ( results.length < 1) {
+                    return res.status(404).json( {error_comp: "No company found!"});
+                } else {
+                    const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
+
+                    // try {
+                    const data = {
+                        username: username,
+                        password: password,
+                        fullName: fullName, 
+                        contactNumber: contactNumber, 
+                        companyCode: companyCode
+                    }
+                    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?);"
+                    connection.query(query, Object.values(data), (error) => {
+                        if (error) {
+                            res.status(400).json( error )
+                            console.log("error", error)
+                        } else {
+                            res.status(201).json( data)
+                            console.log('Account created successfully!', data)
+                        }
+                    })
+                    console.log('Data : ', data)
+
+                }
+            })
+            
         }
     })
-    console.log('Data : ', data)
+    
 
     // } catch (error) {
     //     if ( error.code === 11000) {
@@ -102,14 +121,13 @@ router.route('/login').post( async (req,res) => {
     const query = "SELECT * FROM staffAccounts WHERE username = ?"
     connection.query( query,[username], async (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(error.code).json(error.message)
         }
-        else if ( results.length < 1) {
-            res.json( {status: "No admin account found!"});
-        } else {
+         else {
             user = results[0]
+            
             if (!user) {
-                return res.json({ status: 'error', error: 'User not existed' })
+                return res.status(404).json({ error: 'User not existed' })
             }
         
             if (await bcrypt.compare(password, user['password'])) {
@@ -128,7 +146,7 @@ router.route('/login').post( async (req,res) => {
                 return res.status(200).json(user)
             }
         
-            res.json({ status: 'error', error: 'Invalid password' })
+            res.status(403).json({ error: 'Invalid password' })
         }
     })
 

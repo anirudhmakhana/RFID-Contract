@@ -23,12 +23,12 @@ const shipmentContract = new web3.eth.Contract(contractABI, contractAddress);
 const auth = require("../utils/auth");
 
 //get shipment by id and wallet address(publickey)
-router.route("/:id/:address").get(auth, async (req, res) => {
-  var temp = await shipmentContract.methods
-    .getProduct(req.params.id)
-    .call({ from: req.params.address });
-  res.send(200, temp);
-});
+router.route('/:id/:address').get(auth, async (req,res) => {
+    var temp = await shipmentContract.methods.getProduct(req.params.id).call(
+        { from: req.params.address}
+    )
+    res.status(200).json( temp)
+})
 
 //create shipment
 router.route("/").post(auth, async (req, res) => {
@@ -51,29 +51,28 @@ router.route("/").post(auth, async (req, res) => {
   var dataHex = signature + coder.encodeParams(types, args);
   var data = "0x" + dataHex;
 
-  var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey);
-  var nonce = web3.utils.toHex(txcount);
-  console.log(txcount);
-  var gasPrice = web3.utils.toHex(web3.eth.gasPrice);
-  // var gPrice = await web3.eht.getGasPrice()
-  var gasLimitHex = web3.utils.toHex(600000);
-  var rawTx = {
-    nonce: nonce,
-    gasPrice: gasPrice,
-    gasLimit: gasLimitHex,
-    from: req.body.walletPublicKey,
-    to: contractAddress,
-    data: data,
-  };
-  // var tx = new Tx(rawTx, {chain:"rinkeby"})
-  // var gas = await tx.estimateGas({from:'0xd7a5506dB374d05EcBA383c5b25fD7e32CBA54a8'})
+    // var temp = await tx.sign(privateKey)  
+    // var serializedTx = '0x'+tx.serialize().toString('hex')  
+    // var signedTx = await web3.eth.accounts.signTransaction(
+    //     rawTx,
+    //     req.body.walletPrivateKey
+    // )
+    
+    // var result = await shipmentContract.methods.insert(req.body.uid, req.body.productName, req.body.producerName, req.body.shipmentStatus).send(
+    //     { from: "0xd7a5506dB374d05EcBA383c5b25fD7e32CBA54a8"}
+    // )
+    try
+    {      
+        var result = await web3.eth.sendTransaction(rawTx, function(err, txHash){ res.status(200).json({error:err, transactionHash:txHash}) })
+        // var result = await web3.eth.sendSignedTransaction(serializedTx, function(err, txHash){ console.log(err, txHash) })   
 
-  // var temp = await tx.sign(privateKey)
-  // var serializedTx = '0x'+tx.serialize().toString('hex')
-  // var signedTx = await web3.eth.accounts.signTransaction(
-  //     rawTx,
-  //     req.body.walletPrivateKey
-  // )
+        // console.log(web3.eth.getTransaction(result))
+    }catch(error) {
+        
+            console.log(error)
+        }
+    
+})
 
   // var result = await shipmentContract.methods.insert(req.body.uid, req.body.productName, req.body.producerName, req.body.shipmentStatus).send(
   //     { from: "0xd7a5506dB374d05EcBA383c5b25fD7e32CBA54a8"}

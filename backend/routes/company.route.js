@@ -31,12 +31,12 @@ router.route("/").get(auth, (req, res) => {
     const query = "SELECT * FROM companies"
     connection.query( query, (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
-            res.json( {status: "No company found!"});
+            res.status(404).json( {error: "No company found!"});
         } else {
-            res.json(results)
+            res.status(200).json(results)
         }
     })
     // adminAccountSchema.find((error, data) => {
@@ -52,12 +52,12 @@ router.route("/:companycode").get(auth, (req, res) => {
     const query = "SELECT * FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
-            res.json( {status: "No company found!"});
+            res.status(404).json( {error: "No company found!"});
         } else {
-            res.json(results[0])
+            res.status(200).json(results[0])
         }
     })
 })
@@ -76,10 +76,10 @@ router.route("/").post(admin_auth, async (req, res) => {
     const query = "INSERT INTO companies VALUES (?, ?, ?, ?, ?);"
     connection.query(query, Object.values(data), (error) => {
         if (error) {
-            res.json( {status: "error", reason: error.code})
+            res.status(400).json( {error: error.message})
             console.log("error", error)
         } else {
-            res.json( {status: 200, data: data})
+            res.status(200).json(  data)
             console.log('Account created successfully!', data)
         }
     })
@@ -99,12 +99,12 @@ router.route("/:companycode").delete(admin_auth, (req, res) => {
     const query = "DELETE FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
         if (error) {
-            res.json( {status: "error", reason: error})
+            res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
-            res.json( {status: "No company found!"});
+            res.status(404).json( {error: "No company found!"});
         } else {
-            res.json({status:200, message:`Company ${req.params.companycode} is deleted.`})
+            res.status(200).json({message:`Company ${req.params.companycode} is deleted.`})
         }
     })
 })
