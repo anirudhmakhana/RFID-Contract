@@ -58,7 +58,7 @@ router.route("/:username").get((req, res) => {
         else if ( results.length < 1) {
             res.status(404).json( {status: "No staff account found!"});
         } else {
-            res.status(200).json(results)
+            res.status(200).json(results[0])
         }
     })
     // adminAccountSchema.find((error, data) => {
