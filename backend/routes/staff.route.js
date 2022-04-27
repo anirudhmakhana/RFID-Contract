@@ -8,6 +8,7 @@ let express = require('express'),
 const createError = require('http-errors');
 const mysql = require('mysql')
 const auth = require('../utils/auth')
+const admin_auth = require('../utils/admin-auth')
 
 const connection = mysql.createConnection( {
     host: 'localhost',
@@ -52,12 +53,38 @@ router.route("/getByCompany/:companyCode").get(auth, (req, res) => {
     const query = "SELECT * FROM staffAccounts WHERE companyCode = ?"
     connection.query( query, req.params.companyCode, (error, results) => {
         if (error) {
+            console.log(error.message)
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
+            console.log("no staff")
             res.status(404).json( {status: "No staff account found!"});
         } else {
             res.status(200).json(results)
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
+})
+
+// delete by username
+router.route("/:username").delete(auth, (req, res) => {
+    const query = "DELETE FROM staffAccounts WHERE username = ?"
+    connection.query( query, req.params.username, (error, results) => {
+        if (error) {
+            console.log(error.message)
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            console.log("no staff")
+            res.status(404).json( {status: "No staff account found!"});
+        } else {
+            res.status(200).json({message:`Account ${req.params.username} is deleted.`})
         }
     })
     // adminAccountSchema.find((error, data) => {
