@@ -14,7 +14,7 @@ const verifyToken = (req, res, next ) => {
         req.user = decoded
         return next()
     } catch( err ) {
-        console.log( "Not admin")
+        // console.log( "Not admin")
     }
 
     try {

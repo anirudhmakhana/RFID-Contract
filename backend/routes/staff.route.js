@@ -7,6 +7,7 @@ let express = require('express'),
 
 const createError = require('http-errors');
 const mysql = require('mysql')
+const auth = require('../utils/auth')
 
 const connection = mysql.createConnection( {
     host: 'localhost',
@@ -28,6 +29,28 @@ connection.connect((err) => {
 router.route("/").get((req, res) => {
     const query = "SELECT * FROM staffAccounts"
     connection.query( query, (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {status: "No staff account found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
+})
+
+// Get account by company code
+router.route("/getByCompany/:companyCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM staffAccounts WHERE companyCode = ?"
+    connection.query( query, req.params.companyCode, (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
