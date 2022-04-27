@@ -80,7 +80,7 @@ router.route("/").post(admin_auth, async (req, res) => {
             console.log("error", error)
         } else {
             res.status(200).json(  data)
-            console.log('Account created successfully!', data)
+            console.log('Company created successfully!', data)
         }
     })
     console.log('Data : ', data)
@@ -120,6 +120,38 @@ router.route("/:companycode").delete(admin_auth, (req, res) => {
             res.status(200).json({message:`Company ${req.params.companycode} is deleted.`})
         }
     })
+})
+
+router.route("/update/:companyCode").put(auth, async (req, res) => {
+    const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
+             walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
+
+    // try {
+    const data = { companyCode: companyCode, 
+        companyName: companyName, 
+        managerContact: managerContact, 
+        walletPublicKey: walletPublicKey, 
+        walletPrivateKey: walletPrivateKey}
+    const query = `UPDATE companies SET companyCode='${companyCode}', companyName='${companyName}', managerContact='${managerContact}', walletPublicKey='${walletPublicKey}', walletPrivateKey='${walletPrivateKey}' WHERE companyCode = '${req.params.companyCode}'`
+    connection.query(query, (error) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+            console.log("error", error)
+        } else {
+            res.status(200).json(  data)
+            console.log('Updated successful!', data)
+        }
+    })
+    console.log('Data : ', data)
+
+    // } catch (error) {
+    //     if ( error.code === 11000) {
+    //         return res.json({status:'error', error: "Username already in use."})
+    //     }
+    //     throw error
+    // }
+    // res.json({status:200})
+
 })
 
 module.exports = router;
