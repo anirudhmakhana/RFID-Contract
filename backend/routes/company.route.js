@@ -9,6 +9,7 @@ const createError = require('http-errors');
 const mysql = require('mysql')
 const auth = require('../utils/auth')
 const admin_auth = require('../utils/admin-auth')
+const manager_auth = require('../utils/manager-auth')
 
 const connection = mysql.createConnection( {
     host: 'localhost',
@@ -122,7 +123,7 @@ router.route("/:companycode").delete(admin_auth, (req, res) => {
     })
 })
 
-router.route("/update/:companyCode").put(auth, async (req, res) => {
+router.route("/update/:companyCode").put(manager_auth, async (req, res) => {
     const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
              walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
 

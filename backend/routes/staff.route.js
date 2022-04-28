@@ -9,6 +9,7 @@ const createError = require('http-errors');
 const mysql = require('mysql')
 const auth = require('../utils/auth')
 const admin_auth = require('../utils/admin-auth')
+const manager_auth = require('../utils/manager-auth')
 
 const connection = mysql.createConnection( {
     host: 'localhost',
@@ -27,7 +28,7 @@ connection.connect((err) => {
 })
 
 // Read accounts
-router.route("/").get((req, res) => {
+router.route("/").get(admin_auth, (req, res) => {
     const query = "SELECT * FROM staffAccounts"
     connection.query( query, (error, results) => {
         if (error) {
@@ -95,7 +96,7 @@ router.route("/getByCompany/:companyCode").get(auth, (req, res) => {
 })
 
 // delete by username
-router.route("/:username").delete(auth, (req, res) => {
+router.route("/:username").delete(manager_auth, (req, res) => {
     const query = "DELETE FROM staffAccounts WHERE username = ?"
     connection.query( query, req.params.username, (error, results) => {
         if (error) {
@@ -119,8 +120,8 @@ router.route("/:username").delete(auth, (req, res) => {
 })
 
 // register staff account
-router.route("/register").post(auth, async (req, res) => {
-    const { username: username, password: plainTextPassword, fullName: fullName, contactNumber: contactNumber, companyCode: companyCode} = req.body
+router.route("/register").post(manager_auth, async (req, res) => {
+    const { username: username, password: plainTextPassword, fullName: fullName, contactNumber: contactNumber, positionLevel: positionLevel, companyCode: companyCode} = req.body
 
     if (!username || typeof username !== 'string') {
 		return res.status(403).json({ error: 'Invalid username' })
@@ -156,9 +157,10 @@ router.route("/register").post(auth, async (req, res) => {
                         password: password,
                         fullName: fullName, 
                         contactNumber: contactNumber, 
+                        positionLevel: positionLevel.toLowerCase(),
                         companyCode: companyCode
                     }
-                    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?);"
+                    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?, ?);"
                     connection.query(query, Object.values(data), (error) => {
                         if (error) {
                             res.status(400).json( error )
@@ -204,14 +206,22 @@ router.route('/login').post( async (req,res) => {
         
             if (await bcrypt.compare(password, user['password'])) {
                 // the username, password combination is successful
-        
-                const token = jwt.sign(
-                    {
-                        username: username,
-                    },
-                    process.env.TOKEN_KEY
-                )
-        
+                if (user.positionLevel == "manager") {
+                    const token = jwt.sign(
+                        {
+                            username: username,
+                        },
+                        process.env.MANAGER_TOKEN_KEY
+                    )
+                } else {
+                    const token = jwt.sign(
+                        {
+                            username: username,
+                        },
+                        process.env.TOKEN_KEY
+                    )
+                }
+
                 // return res.json({ status: 'ok', token: token })
                 user.token = token
 
