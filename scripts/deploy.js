@@ -21,18 +21,19 @@ async function main() {
 
   console.log("Tracking Contract deployed to:", rfid.address);
 
-  const createInsert = await rfid.insert(
-    "TEST123",
-    "MASK100",
-    "Pfizer",
-    "Shipped"
-  );
+  const createInsert = await rfid.insert("TEST123", "Pfizer", "A", "Shipped");
   const receiptInsert = await createInsert.wait();
-  console.log(receiptInsert.events[0].args._uid.toString());
+  //console.log(receiptInsert.events[0].args._uid.toString());
 
-  const getProducttxn = await rfid.getProduct("TEST123");
-  // const receiptGetProduct = await getProducttxn.wait();
-  console.log(getProducttxn);
+  //get the product shipment producer
+  const getProducttxn = await rfid.getShipmentProducer("TEST123");
+  const receiptGetProduct = await getProducttxn.wait();
+  console.log(receiptGetProduct.events[0].args);
+
+  const getShipmentDetailstxn = await rfid.getShipmentDetails("TEST123");
+  const receiptGetShipmentDeets = await getShipmentDetailstxn.wait();
+
+  console.log(receiptGetShipmentDeets.events[0].args);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

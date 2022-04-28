@@ -1,4 +1,4 @@
-require("dotenv").config({path:`${__dirname}/.env` });
+require("dotenv").config({ path: `${__dirname}/.env` });
 
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
@@ -27,7 +27,7 @@ module.exports = {
   networks: {
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/l6l9H5MoWdpeM4XtkE3RoqmNAs66Q_kL`,
-      accounts: [process.env.PRIVATE_KEY_RIT],
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
   gasReporter: {
