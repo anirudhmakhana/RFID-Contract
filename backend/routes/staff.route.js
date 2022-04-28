@@ -7,6 +7,8 @@ let express = require('express'),
 
 const createError = require('http-errors');
 const mysql = require('mysql')
+const auth = require('../utils/auth')
+const admin_auth = require('../utils/admin-auth')
 
 const connection = mysql.createConnection( {
     host: 'localhost',
@@ -46,8 +48,78 @@ router.route("/").get((req, res) => {
     // } )
 })
 
+// Read accounts
+router.route("/:username").get((req, res) => {
+    const query = "SELECT * FROM staffAccounts WHERE username = ?"
+    connection.query( query, req.params.username, (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {status: "No staff account found!"});
+        } else {
+            res.status(200).json(results[0])
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
+})
+
+// Get account by company code
+router.route("/getByCompany/:companyCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM staffAccounts WHERE companyCode = ?"
+    connection.query( query, req.params.companyCode, (error, results) => {
+        if (error) {
+            console.log(error.message)
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            console.log("no staff")
+            res.status(404).json( {status: "No staff account found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
+})
+
+// delete by username
+router.route("/:username").delete(auth, (req, res) => {
+    const query = "DELETE FROM staffAccounts WHERE username = ?"
+    connection.query( query, req.params.username, (error, results) => {
+        if (error) {
+            console.log(error.message)
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            console.log("no staff")
+            res.status(404).json( {status: "No staff account found!"});
+        } else {
+            res.status(200).json({message:`Account ${req.params.username} is deleted.`})
+        }
+    })
+    // adminAccountSchema.find((error, data) => {
+    //     if (error) {
+    //         return next(error);
+    //     } else {
+    //         res.json(data);
+    //     }
+    // } )
+})
+
 // register staff account
-router.route("/register").post( async (req, res) => {
+router.route("/register").post(auth, async (req, res) => {
     const { username: username, password: plainTextPassword, fullName: fullName, contactNumber: contactNumber, companyCode: companyCode} = req.body
 
     if (!username || typeof username !== 'string') {
@@ -55,12 +127,12 @@ router.route("/register").post( async (req, res) => {
 	}
 
 	if (!plainTextPassword || typeof plainTextPassword !== 'string') {
-		return re.status(403).json({ error: 'Invalid password' })
+		return res.status(403).json({ error: 'Invalid password' })
 	}
 
 	if (plainTextPassword.length < 5) {
 		return res.status(403).json({
-			error: 'Password should be atleast 6 characters'
+			error: 'Password should be at least 6 characters'
 		})
 	}
     const usr = "SELECT * FROM staffAccounts WHERE username = ?"
