@@ -213,6 +213,8 @@ router.route('/login').post( async (req,res) => {
                         },
                         process.env.MANAGER_TOKEN_KEY
                     )
+                    user.token = token
+
                 } else {
                     const token = jwt.sign(
                         {
@@ -220,10 +222,11 @@ router.route('/login').post( async (req,res) => {
                         },
                         process.env.TOKEN_KEY
                     )
+                    user.token = token
+
                 }
 
                 // return res.json({ status: 'ok', token: token })
-                user.token = token
 
                 return res.status(200).json(user)
             }
