@@ -121,7 +121,7 @@ router.route("/:username").delete(manager_auth, (req, res) => {
 
 // register staff account
 router.route("/register").post(manager_auth, async (req, res) => {
-    const { username: username, password: plainTextPassword, fullName: fullName, contactNumber: contactNumber, positionLevel: positionLevel, companyCode: companyCode} = req.body
+    const { username: username, password: plainTextPassword, fullName: fullName, email: email, positionLevel: positionLevel, companyCode: companyCode} = req.body
 
     if (!username || typeof username !== 'string') {
 		return res.status(403).json({ error: 'Invalid username' })
@@ -156,7 +156,7 @@ router.route("/register").post(manager_auth, async (req, res) => {
                         username: username,
                         password: password,
                         fullName: fullName, 
-                        contactNumber: contactNumber, 
+                        email: email, 
                         positionLevel: positionLevel.toLowerCase(),
                         companyCode: companyCode
                     }
