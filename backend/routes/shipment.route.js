@@ -6,30 +6,50 @@ const Web3 = require('web3');
 const HDWalletProvider = require('@truffle/hdwallet-provider')
 const abi = require("../utils/TrackingContract.json")
 const Contract = require('web3-eth-contract');
-const provider = new HDWalletProvider([process.env.PRIVATE_KEY, process.env.PRIVATE_KEY_TWO], 'https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b')
-const web3 = new Web3(provider)
-web3.eth.Contract.setProvider(`https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b`);
+
 var coder = require('axis-web3/lib/solidity/coder')  
 var CryptoJS = require('crypto-js')  
 const Tx = require('ethereumjs-tx').Transaction
 const contractAddress = "0xD3Dd4FD11B1Bad20E32436140532869BE2542554"
 const contractABI = abi["abi"]
-const shipmentContract = new web3.eth.Contract(contractABI, contractAddress)
 const auth = require('../utils/auth')
+const provider = new HDWalletProvider( [process.env.PRIVATE_KEY_TWO],'https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b')
+const web3 = new Web3(provider)
+web3.eth.Contract.setProvider(`https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b`);
+const shipmentContract = new web3.eth.Contract(contractABI, contractAddress)
+
+// async function web3Initializer() {
+//     try {const provider = new HDWalletProvider([process.env.PRIVATE_KEY, process.env.PRIVATE_KEY_TWO], 'https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b')
+//     const web3 = await new Web3(provider)
+//     let temp = await web3.eth.Contract.setProvider(`https://rinkeby.infura.io/v3/6c9af8d40e4d4ff0bad46e193bc1aa8b`);
+//     const shipmentContract = await new web3.eth.Contract(contractABI, contractAddress)
+//     return { web3: web3, shipmentContract: shipmentContract}
+//     } catch(err) {
+//         console.log(err)
+//     }
+// }
 
 //get shipment by id and wallet address(publickey)
 router.route('/:id/:address').get(auth, async (req,res) => {
-    var temp = await shipmentContract.methods.getProduct(req.params.id).call(
-        { from: req.params.address}
-    )
-    res.status(200).json( temp)
+    try {
+        var temp = await shipmentContract.methods.getProduct(req.params.id).call(
+            { from: req.params.address})
+        // .catch((err) =>  res.status(403).json( err ))
+        // .then((res) => res.status(200).json( {mess:"res"}))
+        res.status(200).json(temp )
+    } catch (err) {
+        console.log(err)
+        res.status(403).json(err)
+    }
+    
+    
 })
 
 //create shipment
 router.route("/").post(auth, async (req,res) => {
     console.log("req",req.body)
     // const networkId = await web3.eth.net.getId()
-    // var privateKey = new Buffer(req.body.walletPrivateKey, 'hex')  
+    // var privateKey = new Buffer(req.body.walletPrivateKey, 'hex')
     
     var functionName = 'insert'  
     var types = ['string','string','string','string']  
@@ -39,7 +59,9 @@ router.route("/").post(auth, async (req,res) => {
     var dataHex = signature + coder.encodeParams(types, args)  
     var data = '0x'+dataHex  
 
-    var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey)
+    var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey).catch((err) =>  res.status(403).json( err ))
+
+
     var nonce = web3.utils.toHex(txcount)  
     console.log(txcount)
     var gasPrice = web3.utils.toHex(web3.eth.gasPrice)

@@ -39,13 +39,7 @@ router.route("/").get((req, res) => {
             res.status(200).json(results)
         }
     })
-    // adminAccountSchema.find((error, data) => {
-    //     if (error) {
-    //         return next(error);
-    //     } else {
-    //         res.json(data);
-    //     }
-    // } )
+
 })
 
 // register admin account
