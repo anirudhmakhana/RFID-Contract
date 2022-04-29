@@ -25,12 +25,6 @@ connection.connect((err) => {
     console.log("MySQL successfully connected.")
 })
 
-// const pool = mysql.createPool({
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASS,
-//     database: process.env.DB_NAME,
-//     socketPath: `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`,
-// })
 
 // Read accounts
 router.route("/").get((req, res) => {
@@ -89,15 +83,6 @@ router.route("/register").post( async (req, res) => {
         }
     })
     console.log('Data : ', data)
-
-    // } catch (error) {
-    //     if ( error.code === 11000) {
-    //         return res.json({status:'error', error: "Username already in use."})
-    //     }
-    //     throw error
-    // }
-    // res.json({status:200})
-
 })
 
 // login as admin

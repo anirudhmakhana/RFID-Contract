@@ -40,13 +40,6 @@ router.route("/").get(admin_auth, (req, res) => {
             res.status(200).json(results)
         }
     })
-    // adminAccountSchema.find((error, data) => {
-    //     if (error) {
-    //         return next(error);
-    //     } else {
-    //         res.json(data);
-    //     }
-    // } )
 })
 
 // Read accounts
@@ -62,13 +55,7 @@ router.route("/:username").get((req, res) => {
             res.status(200).json(results[0])
         }
     })
-    // adminAccountSchema.find((error, data) => {
-    //     if (error) {
-    //         return next(error);
-    //     } else {
-    //         res.json(data);
-    //     }
-    // } )
+
 })
 
 // Get account by company code
@@ -86,13 +73,7 @@ router.route("/getByCompany/:companyCode").get(auth, (req, res) => {
             res.status(200).json(results)
         }
     })
-    // adminAccountSchema.find((error, data) => {
-    //     if (error) {
-    //         return next(error);
-    //     } else {
-    //         res.json(data);
-    //     }
-    // } )
+
 })
 
 // delete by username
@@ -110,13 +91,7 @@ router.route("/:username").delete(manager_auth, (req, res) => {
             res.status(200).json({message:`Account ${req.params.username} is deleted.`})
         }
     })
-    // adminAccountSchema.find((error, data) => {
-    //     if (error) {
-    //         return next(error);
-    //     } else {
-    //         res.json(data);
-    //     }
-    // } )
+
 })
 
 // register staff account
@@ -177,15 +152,6 @@ router.route("/register").post(manager_auth, async (req, res) => {
             
         }
     })
-    
-
-    // } catch (error) {
-    //     if ( error.code === 11000) {
-    //         return res.json({status:'error', error: "Username already in use."})
-    //     }
-    //     throw error
-    // }
-    // res.json({status:200})
 
 })
 
@@ -225,8 +191,6 @@ router.route('/login').post( async (req,res) => {
                     user.token = token
 
                 }
-
-                // return res.json({ status: 'ok', token: token })
 
                 return res.status(200).json(user)
             }

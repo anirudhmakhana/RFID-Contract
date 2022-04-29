@@ -40,13 +40,7 @@ router.route("/").get(auth, (req, res) => {
             res.status(200).json(results)
         }
     })
-    // adminAccountSchema.find((error, data) => {
-    //     if (error) {
-    //         return next(error);
-    //     } else {
-    //         res.json(data);
-    //     }
-    // } )
+
 })
 
 router.route("/:companycode").get(auth, (req, res) => {
@@ -86,29 +80,15 @@ router.route("/").post(admin_auth, async (req, res) => {
     })
     console.log('Data : ', data)
 
-    // } catch (error) {
-    //     if ( error.code === 11000) {
-    //         return res.json({status:'error', error: "Username already in use."})
-    //     }
-    //     throw error
-    // }
-    // res.json({status:200})
-
 })
 
 router.route("/:companycode").delete(admin_auth, (req, res) => {
     const staff_query = "DELETE FROM staffAccounts WHERE companyCode = ?"
     connection.query( staff_query, req.params.companyCode, (error, results) => {
-        // if (error) {
-        //     console.log(error.message)
-        //     res.status(400).json( {error: error.message})
-        // }
-        // else if ( results.length < 1) {
-        //     console.log("no staff")
-        //     res.status(404).json( {status: "No staff account found!"});
-        // } else {
-        //     res.status(200).json(results)
-        // }
+        if (error) {
+            console.log(error.message)
+            res.status(400).json( {error: error.message})
+        }
     })
     const query = "DELETE FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
@@ -155,15 +135,6 @@ router.route("/update/:companyCode").put(manager_auth, async (req, res) => {
             console.log('Data : ', data)
         }
     })
-    
-
-    // } catch (error) {
-    //     if ( error.code === 11000) {
-    //         return res.json({status:'error', error: "Username already in use."})
-    //     }
-    //     throw error
-    // }
-    // res.json({status:200})
 
 })
 
