@@ -238,4 +238,50 @@ router.route('/login').post( async (req,res) => {
 	
 })
 
+// update staff
+router.route("/update/:username").put(manager_auth, async (req, res) => {
+    const {
+        username: username,
+        password: password,
+        fullName: fullName,
+        email: email,
+        companyCode: companyCode
+    } = req.body
+
+    // try {
+    const data = {
+        username: username,
+        password: password,
+        fullName: fullName,
+        email: email,
+        companyCode: companyCode
+    }
+
+    const query_exist = "SELECT * FROM staffAccounts WHERE username = ?"
+    connection.query( query_exist,[req.params.username], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No account found!"});
+        } else {
+            console.log(results)
+            const query = `UPDATE staffAccounts SET username='${username}', password='${password}', fullName='${fullName}', email='${email}', companyCode='${companyCode}' WHERE username = '${req.params.username}'`
+            connection.query(query, (error_update) => {
+                if (error_update) {
+                    res.status(400).json( {error_update: error_update.message})
+                    console.log("error", error_update)
+                } else {
+                    resdata = data
+                    resdata.positionLevel = results[0].positionLevel
+                    res.status(200).json( resdata)
+                    console.log('Updated successful!', resdata)
+                }
+            })
+            console.log('Data : ', data)
+        }
+    })
+
+})
+
 module.exports = router;

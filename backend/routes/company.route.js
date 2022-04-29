@@ -133,17 +133,29 @@ router.route("/update/:companyCode").put(manager_auth, async (req, res) => {
         managerContact: managerContact, 
         walletPublicKey: walletPublicKey, 
         walletPrivateKey: walletPrivateKey}
-    const query = `UPDATE companies SET companyCode='${companyCode}', companyName='${companyName}', managerContact='${managerContact}', walletPublicKey='${walletPublicKey}', walletPrivateKey='${walletPrivateKey}' WHERE companyCode = '${req.params.companyCode}'`
-    connection.query(query, (error) => {
+
+    const query_exist = "SELECT * FROM companies WHERE companyCode = ?"
+    connection.query( query_exist,[req.params.companycode], (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
-            console.log("error", error)
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No company found!"});
         } else {
-            res.status(200).json(  data)
-            console.log('Updated successful!', data)
+            const query = `UPDATE companies SET companyCode='${companyCode}', companyName='${companyName}', managerContact='${managerContact}', walletPublicKey='${walletPublicKey}', walletPrivateKey='${walletPrivateKey}' WHERE companyCode = '${req.params.companyCode}'`
+            connection.query(query, (error_update) => {
+                if (error_update) {
+                    res.status(400).json( {error_update: error_update.message})
+                    console.log("error", error_update)
+                } else {
+                    res.status(200).json( data)
+                    console.log('Updated successful!', data)
+                }
+            })
+            console.log('Data : ', data)
         }
     })
-    console.log('Data : ', data)
+    
 
     // } catch (error) {
     //     if ( error.code === 11000) {
