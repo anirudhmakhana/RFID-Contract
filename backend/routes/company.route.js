@@ -85,10 +85,6 @@ router.route("/").post(admin_auth, async (req, res) => {
 router.route("/:companycode").delete(admin_auth, (req, res) => {
     const staff_query = "DELETE FROM staffAccounts WHERE companyCode = ?"
     connection.query( staff_query, req.params.companyCode, (error, results) => {
-        if (error) {
-            console.log(error.message)
-            res.status(400).json( {error: error.message})
-        }
     })
     const query = "DELETE FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
