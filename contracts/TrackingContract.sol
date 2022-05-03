@@ -3,25 +3,23 @@ pragma solidity ^0.8.0;
 
 contract TrackingContract {
 
-    //create a structure for scanned
-    struct Details{
-        string scannedAt;
-        uint256 scannedTime;
-        string status;
-    }
-
     //create a structure for shipment
     struct Shipment {
         string uid;
-        Details[] shipmentDetails;
-        string producer;
+        string description;
+        string origin;
+        string current;
+        string destination;
+        string companyCode;
+        string status;
+        uint256 scannedTime;
     }
 
     //the person trying to make a transaction.
     address public me;
 
-    //Shipment[] public shipments;
-    mapping(string => Shipment) public shipments;
+    Shipment[] public shipments;
+    //mapping(string => Shipment) public shipments;
 
     uint256 public totalTransactions;
 
@@ -30,58 +28,46 @@ contract TrackingContract {
         me = msg.sender;
     }
 
-    event ShipmentDetails(
-        Details[] details
+    event InsertShipment(
+        Shipment shipment
     );
 
-    event ShipmentProducer(
-        string producer
-    );
 
-    event StatusUpdated(
-        string _uid,
-        string _status
+    event ShipmentUpdated(
+        Shipment shipment
     );
 
     
-    function insert(
-        string calldata _uid,
-        string calldata _producer,
-        string calldata _scannedAt,
-        string calldata _status
-    ) external returns (uint256) {
-        Details memory newDetails = Details(_scannedAt, block.timestamp, _status);
-        shipments[_uid].uid = _uid;
-        shipments[_uid].producer = _producer;
-        shipments[_uid].shipmentDetails.push(newDetails);
+    function insert(Shipment memory _shipment
+    ) public {
+        shipments.push(_shipment);
+        emit InsertShipment(_shipment);
         totalTransactions++;
-
-        return totalTransactions;
-    }
-
-    function getShipmentDetails(string memory _uid) public returns(Details[] memory ){
-        emit ShipmentDetails(shipments[_uid].shipmentDetails);
-        return shipments[_uid].shipmentDetails;
     }
      
-    function compareStrings(string memory a, string memory b) public pure returns (bool) {
+    function updateStatus(Shipment memory updatedShipment) public{
+       for(uint256 i =0; i< totalTransactions; i++){
+           if(compareStrings(shipments[i].uid, updatedShipment.uid)){
+              shipments[i] = updatedShipment;
+           }
+       }
+
+       emit ShipmentUpdated(updatedShipment);
+             
+    }
+
+    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
-    function updateStatus(string memory _uid, string memory _newStatus, string memory _newScannedAt) public returns (bool){
-        for(uint256 i = 0; i < totalTransactions; i++){
-            if(compareStrings(shipments[_uid].uid, _uid)){
-                Details memory updatedDetails = Details(_newScannedAt, block.timestamp, _newStatus);
-                shipments[_uid].shipmentDetails.push(updatedDetails);
-                return true;
-            }
-        }   
-        return false;
+    function getShipmentsByUID(string calldata _uid) public view returns(Shipment memory){
+        for(uint256 i =0; i< totalTransactions; i++){
+           if(compareStrings(shipments[i].uid, _uid)){
+              return shipments[i];
+           }
+       }
+       revert("Shipment Not Found");
     }
 
-    function getShipmentProducer(string memory _uid) public returns(string memory){
-        emit ShipmentProducer(shipments[_uid].producer);
-        return shipments[_uid].producer;
-    }
-        
+    
 }

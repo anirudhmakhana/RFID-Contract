@@ -21,19 +21,48 @@ async function main() {
 
   console.log("Tracking Contract deployed to:", rfid.address);
 
-  const createInsert = await rfid.insert("TEST123", "Pfizer", "A", "Shipped");
+  const insertOne = [
+    "TEST123",
+    "Stainless Steel 2 rolls",
+    "A",
+    "B",
+    "C",
+    "YORU",
+    "Shipped",
+    12345678,
+  ];
+  const insertTwo = [
+    "TEST456",
+    "PS5 2EA, Nintendo Switch 1EA",
+    "A",
+    "B",
+    "C",
+    "YORU",
+    "Shipped",
+    12345678,
+  ];
+  const updateOne = [
+    "TEST123",
+    "Stainless Steel 2 rolls",
+    "A",
+    "C",
+    "C",
+    "YORU",
+    "Done",
+    12345678,
+  ];
+
+  const createInsert = await rfid.insert(insertOne);
   const receiptInsert = await createInsert.wait();
-  //console.log(receiptInsert.events[0].args._uid.toString());
+  console.log(receiptInsert.events[0]);
 
-  //get the product shipment producer
-  const getProducttxn = await rfid.getShipmentProducer("TEST123");
-  const receiptGetProduct = await getProducttxn.wait();
-  console.log(receiptGetProduct.events[0].args);
+  const createInsertTwo = await rfid.insert(insertTwo);
+  const receiptInsertTwo = await createInsertTwo.wait();
+  console.log(receiptInsertTwo.events[0]);
 
-  const getShipmentDetailstxn = await rfid.getShipmentDetails("TEST123");
-  const receiptGetShipmentDeets = await getShipmentDetailstxn.wait();
-
-  console.log(receiptGetShipmentDeets.events[0].args);
+  const updateShipment = await rfid.updateStatus(updateOne);
+  updateShipmentReceipt = await updateShipment.wait();
+  console.log(updateShipmentReceipt.events[0]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
