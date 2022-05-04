@@ -10,7 +10,7 @@ const Contract = require('web3-eth-contract');
 var coder = require('axis-web3/lib/solidity/coder')  
 var CryptoJS = require('crypto-js')  
 const Tx = require('ethereumjs-tx').Transaction
-const contractAddress = "0xD3Dd4FD11B1Bad20E32436140532869BE2542554"
+const contractAddress = "0x70CB7E6DEFd1a235Ff11a45e4a382F6E0dFC7DB7"
 const contractABI = abi["abi"]
 const auth = require('../utils/auth')
 
@@ -70,7 +70,7 @@ router.route('/:id/:address').get(auth, async (req,res) => {
             // console.log(tools)
         let web3 = tools.web3
         let shipmentContract = tools.shipmentContract
-        shipmentContract.methods.getProduct(req.params.id).call(
+        shipmentContract.methods.getShipmentsByUID(req.params.id).call(
             { from: req.params.address})
             .then( result => res.status(200).json(result ))
             .catch( err => {
@@ -102,8 +102,8 @@ router.route("/").post(auth, async (req,res) => {
         let web3 = tools.web3
         let shipmentContract = tools.shipmentContract
         var functionName = 'insert'  
-        var types = ['string','string','string','string']  
-        var args = [req.body.uid, req.body.productName, req.body.producerName, req.body.shipmentStatus]  
+        var types = ['string','string','string','string','string','string','string','uint256']  
+        var args = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode,req.body.destinationNode, req.body.companyCode, req.body.status , req.body.scannedTime]  
         var fullName = functionName + '(' + types.join() + ')'  
         var signature = CryptoJS.SHA3(fullName,{outputLength:256}).toString(CryptoJS.enc.Hex).slice(0, 8)  
         var dataHex = signature + coder.encodeParams(types, args)  

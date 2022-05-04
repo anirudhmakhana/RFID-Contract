@@ -43,6 +43,20 @@ router.route("/").get(auth, (req, res) => {
 
 })
 
+router.route("/companyCode/").get(auth, (req, res) => {
+    const query = "SELECT companyCode FROM companies"
+    connection.query( query, (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No company found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
 router.route("/:companycode").get(auth, (req, res) => {
     const query = "SELECT * FROM companies WHERE companyCode = ?"
     connection.query( query,[req.params.companycode], (error, results) => {
