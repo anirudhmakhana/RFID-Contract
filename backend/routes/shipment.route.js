@@ -111,59 +111,11 @@ router.route("/").post(auth, async (req,res) => {
         var signature = CryptoJS.SHA3(fullName,{outputLength:256}).toString(CryptoJS.enc.Hex).slice(0, 8)  
         // var dataHex = signature + coder.encodeParams(types, args)  
         // var data = '0x'+dataHex
-        var data = web3.eth.abi.encodeFunctionCall({
-            name: 'insert',
-            type: 'function',
-            inputs: [
-                {
-                  "components": [
-                    {
-                      "internalType": "string",
-                      "name": "uid",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "description",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "origin",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "current",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "destination",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "companyCode",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "status",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "scannedTime",
-                      "type": "uint256"
-                    }
-                  ],
-                  "internalType": "struct TrackingContract.Shipment",
-                  "name": "_shipment",
-                  "type": "tuple"
-                }
-              ]
-        }, [[req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+
+        // abi[4] is insert function 
+        // console.log("abi 4 :", abi[4])
+        var data = web3.eth.abi.encodeFunctionCall(contractABI[4], 
+            [[req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
             req.body.companyCode, req.body.status , req.body.scannedTime]]);
 
         var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey).catch((err) =>  res.status(403).json( err ))
