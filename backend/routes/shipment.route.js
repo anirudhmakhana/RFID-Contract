@@ -101,19 +101,76 @@ router.route("/").post(auth, async (req,res) => {
         // console.log(tools)
         let web3 = tools.web3
         let shipmentContract = tools.shipmentContract
-        var functionName = 'insert'  
-        var types = ['string','string','string','string','string','string','string','uint256']  
-        var args = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode,req.body.destinationNode, req.body.companyCode, req.body.status , req.body.scannedTime]  
+        var functionName = "insert"  
+        var types = ["string","string","string","string","string","string","string","uint256"]
+        // var types = ["tuple"]
+        var args = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+             req.body.companyCode, req.body.status , req.body.scannedTime]
+        console.log(args) 
         var fullName = functionName + '(' + types.join() + ')'  
         var signature = CryptoJS.SHA3(fullName,{outputLength:256}).toString(CryptoJS.enc.Hex).slice(0, 8)  
-        var dataHex = signature + coder.encodeParams(types, args)  
-        var data = '0x'+dataHex  
+        // var dataHex = signature + coder.encodeParams(types, args)  
+        // var data = '0x'+dataHex
+        var data = web3.eth.abi.encodeFunctionCall({
+            name: 'insert',
+            type: 'function',
+            inputs: [
+                {
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "uid",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "description",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "origin",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "current",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "destination",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "companyCode",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "status",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "scannedTime",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct TrackingContract.Shipment",
+                  "name": "_shipment",
+                  "type": "tuple"
+                }
+              ]
+        }, [[req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+            req.body.companyCode, req.body.status , req.body.scannedTime]]);
 
         var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey).catch((err) =>  res.status(403).json( err ))
 
 
         var nonce = web3.utils.toHex(txcount)  
-        console.log(txcount)
+        // console.log(txcount)
         var gasPrice = web3.utils.toHex(web3.eth.gasPrice)
         // var gPrice = await web3.eht.getGasPrice()
         var gasLimitHex = web3.utils.toHex(600000)
@@ -133,17 +190,20 @@ router.route("/").post(auth, async (req,res) => {
         // )
         try
         {      
-            var result = await web3.eth.sendTransaction(rawTx, function(err, txHash){ res.status(200).json({error:err, transactionHash:txHash}) })
+            var result = await web3.eth.sendTransaction(rawTx, function(err, txHash){ 
+                res.status(200).json({error:err, transactionHash:txHash}) 
+            return txHash})
             // var result = await web3.eth.sendSignedTransaction(serializedTx, function(err, txHash){ console.log(err, txHash) })   
-
+            console.log("result : \n", result)
             // console.log(web3.eth.getTransaction(result))
         }catch(error) {
             
-                console.log(error)
+                console.log("error", error)
+                // res.status(403).json({error:error})
             }
     })
     .catch( err => {
-        console.log(err)
+        console.log("txn error: ", err)
         res.status(403).json(err)
     })
     
