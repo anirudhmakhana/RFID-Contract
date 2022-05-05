@@ -14,6 +14,7 @@ const adminRoute = require("../backend/routes/admin.route");
 const shipmentRoute = require("../backend/routes/shipment.route");
 const staffRoute = require("../backend/routes/staff.route");
 const nodeRoute = require("../backend/routes/node.route");
+const scanRoute = require("../backend/routes/scan.route");
 
 // // Connecting MongoDB
 // mongoose.Promise = global.Promise;
@@ -41,7 +42,7 @@ app.use("/admin", adminRoute);
 app.use("/staff", staffRoute);
 app.use("/shipment", shipmentRoute);
 app.use("/node", nodeRoute);
-
+app.use("/scan", scanRoute);
 // PORT
 const port = process.env.PORT || 4000;
 const server = app.listen(port, () => {

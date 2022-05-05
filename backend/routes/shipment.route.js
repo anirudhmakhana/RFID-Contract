@@ -169,56 +169,99 @@ router.route("/").post(auth, async (req,res) => {
         // var result = await shipmentContract.methods.insert(req.body.uid, req.body.productName, req.body.producerName, req.body.shipmentStatus).send(
         //     { from: "0xd7a5506dB374d05EcBA383c5b25fD7e32CBA54a8"}
         // )
-        try
-        {      
-            web3.eth.sendTransaction(rawTx)
-            .then(result => {
-                const data = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
-                    req.body.companyCode, req.body.status , req.body.scannedTime, result.transactionHash]
-                const query = "INSERT INTO shipments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
-                connection.query(query, data, (error) => {
-                    if (error) {
-                        res.status(400).json( {error: error.message})
-                        console.log("error", error)
-                    } else {
-                        const scan_data = [req.body.uid, req.body.currentNode, req.body.scannedTime,
-                            req.body.status , result.transactionHash]
-                        const scan_query = "INSERT INTO scanData VALUES (?, ?, ?, ?, ?);"
-                        connection.query(scan_query, scan_data, (error) => {
-                            if (error) {
-                                res.status(400).json( {error: error.message})
-                                console.log("error", error)
-                            } else {
-                                res.status(200).json(  data)
-                                console.log('Shipment created successfully!', data)
-                            }
-                        })
-                    }
-                })
+        // try
+        // {      
+        //     web3.eth.sendTransaction(rawTx)
+        //     .then(result => {
+        //         const data = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+        //             req.body.companyCode, req.body.status , req.body.scannedTime, result.transactionHash]
+        //         const query = "INSERT INTO shipments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
+        //         connection.query(query, data, (error) => {
+        //             if (error) {
+        //                 res.status(400).json( {error: error.message})
+        //                 console.log("error", error)
+        //             } else {
+        //                 const scan_data = [req.body.uid, req.body.currentNode, req.body.scannedTime,
+        //                     req.body.status , result.transactionHash]
+        //                 const scan_query = "INSERT INTO scanData VALUES (?, ?, ?, ?, ?);"
+        //                 connection.query(scan_query, scan_data, (error) => {
+        //                     if (error) {
+        //                         res.status(400).json( {error: error.message})
+        //                         console.log("error", error)
+        //                     } else {
+        //                         res.status(200).json(  data)
+        //                         console.log('Shipment created successfully!', data)
+        //                     }
+        //                 })
+        //             }
+        //         })
                 
-            })
-            .catch(err => {
-                res.status(403).json( {error: err})
-            })
+        //     })
+        //     .catch(err => {
+        //         res.status(403).json( {error: err})
+        //     })
             
             
+        //     //     function(err, txHash){ 
+        //     //     res.status(200).json({error:err, transactionHash:txHash}) 
+        //     // return txHash})
+        //     // var result = await web3.eth.sendSignedTransaction(serializedTx, function(err, txHash){ console.log(err, txHash) })   
+        //     // console.log("result : \n", result)
+        //     // console.log(web3.eth.getTransaction(result))
+        // }catch(error) {
+            
+        //         console.log("error", error)
+                
+        //         res.status(403).json({error:error})
+        // }
+        web3.eth.sendTransaction(rawTx)
+        .then(result => {
+            res.status(200).json( {transactionHash:result.transactionHash})
+        })
+        .catch(err => {
+            res.status(403).json( {error: err})
+        })
+    })
+    .catch( err => {
+        console.log("txn error: ", err)
+        res.status(403).json(err)
+    })
+    
+    
+})
+
+router.route("/centralize/").post(auth, async (req,res) => {
+    
+    const data = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+        req.body.companyCode, req.body.status , req.body.scannedTime, req.body.transactionHash]
+    const query = "INSERT INTO shipments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
+    connection.query(query, data, (error) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+            console.log("error", error)
+        } else {
+            // const scan_data = [req.body.uid, req.body.currentNode, req.body.scannedTime,
+            //     req.body.status , req.body.transactionHash]
+            // const scan_query = "INSERT INTO scanData VALUES (?, ?, ?, ?, ?);"
+            // connection.query(scan_query, scan_data, (error) => {
+            //     if (error) {
+            //         res.status(400).json( {error: error.message})
+            //         console.log("error", error)
+            //     } else {
+            //         res.status(200).json(  data)
+            //         console.log('Shipment created successfully!', data)
+            //     }
+            // })
+            res.status(200).json( data )
+        }
+    })      
             //     function(err, txHash){ 
             //     res.status(200).json({error:err, transactionHash:txHash}) 
             // return txHash})
             // var result = await web3.eth.sendSignedTransaction(serializedTx, function(err, txHash){ console.log(err, txHash) })   
             // console.log("result : \n", result)
             // console.log(web3.eth.getTransaction(result))
-        }catch(error) {
-            
-                console.log("error", error)
-                
-                res.status(403).json({error:error})
-        }
-    })
-    .catch( err => {
-        console.log("txn error: ", err)
-        res.status(403).json(err)
-    })
+        
     
     
 })
@@ -240,33 +283,15 @@ router.route("/update/").post(auth, async (req,res) => {
         var nonce = web3.utils.toHex(txcount)  
         var gasPrice = web3.utils.toHex(web3.eth.gasPrice)
         var gasLimitHex = web3.utils.toHex(600000)
-        var rawTx = { 'nonce': nonce, 'gasPrice': gasPrice, 'gasLimit': gasLimitHex, 'from': req.body.walletPublicKey, 'to': contractAddress, 'data': data}  
-        try
-        {      
-            web3.eth.sendTransaction(rawTx)
-            .then(result => {
-                const data = [req.body.uid, req.body.currentNode, req.body.scannedTime,
-                    req.body.status , result.transactionHash]
-                const query = "INSERT INTO scanData VALUES (?, ?, ?, ?, ?);"
-                connection.query(query, data, (error) => {
-                    if (error) {
-                        res.status(400).json( {error: error.message})
-                        console.log("error", error)
-                    } else {
-                        res.status(200).json(  data)
-                        console.log('Scan data uploaded successfully!', data)
-                    }
-                })
-            })
-            .catch(err => {
-                res.status(403).json( {error: err})
-            })
-        }catch(error) {
-            
-                console.log("error", error)
-                
-                res.status(403).json({error:error})
-        }
+        var rawTx = { 'nonce': nonce, 'gasPrice': gasPrice, 'gasLimit': gasLimitHex, 'from': req.body.walletPublicKey, 'to': contractAddress, 'data': data}     
+        web3.eth.sendTransaction(rawTx)
+        .then(result => {
+            res.status(200).json( {transactionHash:result.transactionHash})
+        })
+        .catch(err => {
+            res.status(403).json( {error: err})
+        })
+        
     })
     .catch( err => {
         console.log("txn error: ", err)
