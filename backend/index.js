@@ -38,6 +38,7 @@ app.use(cors());
 app.use("/company", companyRoute);
 app.use("/admin", adminRoute);
 app.use("/staff", staffRoute);
+app.use("/shipment", shipmentRoute);
 
 // PORT
 const port = process.env.PORT || 4000;
@@ -57,17 +58,17 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode).send(err.message);
 });
 
-const appBlockChain = express();
+// const appBlockChain = express();
 
-appBlockChain.use(bodyParser.json());
-appBlockChain.use(
-  bodyParser.urlencoded({
-    extended: true,
-  })
-);
-appBlockChain.use(cors());
-appBlockChain.use("/shipment", shipmentRoute);
+// appBlockChain.use(bodyParser.json());
+// appBlockChain.use(
+//   bodyParser.urlencoded({
+//     extended: true,
+//   })
+// );
+// appBlockChain.use(cors());
+// appBlockChain.use("/shipment", shipmentRoute);
 
-appBlockChain.listen(4010, () => {
-  console.log("Connected to port " + 4010);
-});
+// appBlockChain.listen(4010, () => {
+//   console.log("Connected to port " + 4010);
+// });

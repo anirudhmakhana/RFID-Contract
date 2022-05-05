@@ -32,7 +32,6 @@ connection.connect((err) => {
     console.log("MySQL successfully connected.")
 })
 
-
 async function web3Initializer() {
     const query = "SELECT walletPrivateKey FROM companies"
 
@@ -60,6 +59,22 @@ async function web3Initializer() {
 
 
 }
+
+// get all shipments from SQL
+router.route("/").get(auth, (req, res) => {
+    const query = "SELECT * FROM shipments"
+    connection.query( query, (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+
+})
 
 //get shipment by id and wallet address(publickey)
 router.route('/:id/:address').get(auth, async (req,res) => {
@@ -142,17 +157,38 @@ router.route("/").post(auth, async (req,res) => {
         // )
         try
         {      
-            var result = await web3.eth.sendTransaction(rawTx, function(err, txHash){ 
-                res.status(200).json({error:err, transactionHash:txHash}) 
-            return txHash})
+            web3.eth.sendTransaction(rawTx)
+            .then(result => {
+                const data = [req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+                    req.body.companyCode, req.body.status , req.body.scannedTime, result.transactionHash]
+                const query = "INSERT INTO shipments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
+                connection.query(query, data, (error) => {
+                    if (error) {
+                        res.status(400).json( {error: error.message})
+                        console.log("error", error)
+                    } else {
+                        res.status(200).json(  data)
+                        console.log('Shipment created successfully!', data)
+                    }
+                })
+            })
+            .catch(err => {
+                res.status(403).json( {error: err})
+            })
+            
+            
+            //     function(err, txHash){ 
+            //     res.status(200).json({error:err, transactionHash:txHash}) 
+            // return txHash})
             // var result = await web3.eth.sendSignedTransaction(serializedTx, function(err, txHash){ console.log(err, txHash) })   
-            console.log("result : \n", result)
+            // console.log("result : \n", result)
             // console.log(web3.eth.getTransaction(result))
         }catch(error) {
             
                 console.log("error", error)
-                // res.status(403).json({error:error})
-            }
+                
+                res.status(403).json({error:error})
+        }
     })
     .catch( err => {
         console.log("txn error: ", err)
