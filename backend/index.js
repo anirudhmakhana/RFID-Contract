@@ -13,6 +13,7 @@ const companyRoute = require("../backend/routes/company.route");
 const adminRoute = require("../backend/routes/admin.route");
 const shipmentRoute = require("../backend/routes/shipment.route");
 const staffRoute = require("../backend/routes/staff.route");
+const nodeRoute = require("../backend/routes/node.route");
 
 // // Connecting MongoDB
 // mongoose.Promise = global.Promise;
@@ -39,6 +40,7 @@ app.use("/company", companyRoute);
 app.use("/admin", adminRoute);
 app.use("/staff", staffRoute);
 app.use("/shipment", shipmentRoute);
+app.use("/node", nodeRoute);
 
 // PORT
 const port = process.env.PORT || 4000;
