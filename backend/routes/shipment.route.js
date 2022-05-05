@@ -76,8 +76,22 @@ router.route("/").get(auth, (req, res) => {
 
 })
 
+router.route('/:id').get(auth, async (req,res) => {
+    const query = "SELECT * FROM shipments WHERE uid = ?"
+    connection.query( query, [req.params.id], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results[0])
+        }
+    })
+})
+
 //get shipment by id and wallet address(publickey)
-router.route('/:id/:address').get(auth, async (req,res) => {
+router.route('/contract/:id/:address').get(auth, async (req,res) => {
     try {
         web3Initializer()
         
