@@ -212,4 +212,57 @@ router.route("/").post(auth, async (req,res) => {
     
 })
 
+//update shipment
+router.route("/update/").post(auth, async (req,res) => {
+    console.log("req",req.body)
+    web3Initializer()
+    .then( async tools => {
+        let web3 = tools.web3
+    
+        var data = web3.eth.abi.encodeFunctionCall(contractABI[8], 
+            [[req.body.uid, req.body.description, req.body.originNode, req.body.currentNode, req.body.destinationNode,
+            req.body.companyCode, req.body.status , req.body.scannedTime]]);
+
+        var txcount = await web3.eth.getTransactionCount(req.body.walletPublicKey).catch((err) =>  res.status(403).json( err ))
+
+
+        var nonce = web3.utils.toHex(txcount)  
+        var gasPrice = web3.utils.toHex(web3.eth.gasPrice)
+        var gasLimitHex = web3.utils.toHex(600000)
+        var rawTx = { 'nonce': nonce, 'gasPrice': gasPrice, 'gasLimit': gasLimitHex, 'from': req.body.walletPublicKey, 'to': contractAddress, 'data': data}  
+        try
+        {      
+            web3.eth.sendTransaction(rawTx)
+            .then(result => {
+                const data = [req.body.uid, req.body.currentNode, req.body.scannedTime,
+                    req.body.status , result.transactionHash]
+                const query = "INSERT INTO scanData VALUES (?, ?, ?, ?, ?);"
+                connection.query(query, data, (error) => {
+                    if (error) {
+                        res.status(400).json( {error: error.message})
+                        console.log("error", error)
+                    } else {
+                        res.status(200).json(  data)
+                        console.log('Scan data uploaded successfully!', data)
+                    }
+                })
+            })
+            .catch(err => {
+                res.status(403).json( {error: err})
+            })
+        }catch(error) {
+            
+                console.log("error", error)
+                
+                res.status(403).json({error:error})
+        }
+    })
+    .catch( err => {
+        console.log("txn error: ", err)
+        res.status(403).json(err)
+    })
+    
+    
+})
+
 module.exports = router;
