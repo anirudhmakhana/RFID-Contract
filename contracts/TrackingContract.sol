@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 contract TrackingContract {
-
+    //Array size
+    //how the array is stored in the blockchain?
     //create a structure for shipment
     struct Shipment {
         string uid;
@@ -68,6 +69,8 @@ contract TrackingContract {
        }
        revert("Shipment Not Found");
     }
+
+
 
     
 }
