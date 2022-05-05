@@ -29,9 +29,25 @@ connection.connect((err) => {
 })
 
 
-// Read accounts
+// Read nodes
 router.route("/").get(auth, (req, res) => {
     const query = "SELECT * FROM nodes"
+    connection.query( query, (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+
+})
+
+// Read active nodes
+router.route("/active/").get(auth, (req, res) => {
+    const query = "SELECT * FROM nodes WHERE status = 'active'"
     connection.query( query, (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
@@ -77,6 +93,53 @@ router.route("/:nodeCode").delete(auth, (req, res) => {
             res.status(404).json( {error: "No node found!"});
         } else {
             res.status(200).json({message:`Node ${req.params.nodeCode} is deleted.`})
+        }
+    })
+})
+
+// get node by nodeCode
+router.route("/:nodeCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM nodes WHERE nodeCode = ?"
+    connection.query( query,[req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            res.status(200).json(results[0])
+        }
+    })
+})
+
+
+// Read nodes of company
+router.route("/bycompany/:companyCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM nodes WHERE companyCode = ?"
+    connection.query( query, [req.params.companyCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
+
+// Read active nodes of company
+router.route("/active/:companyCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM nodes WHERE companyCode = ? and status = 'active'"
+    connection.query( query, [req.params.companyCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            res.status(200).json(results)
         }
     })
 })
