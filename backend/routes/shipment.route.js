@@ -181,10 +181,21 @@ router.route("/").post(auth, async (req,res) => {
                         res.status(400).json( {error: error.message})
                         console.log("error", error)
                     } else {
-                        res.status(200).json(  data)
-                        console.log('Shipment created successfully!', data)
+                        const scan_data = [req.body.uid, req.body.currentNode, req.body.scannedTime,
+                            req.body.status , result.transactionHash]
+                        const scan_query = "INSERT INTO scanData VALUES (?, ?, ?, ?, ?);"
+                        connection.query(scan_query, scan_data, (error) => {
+                            if (error) {
+                                res.status(400).json( {error: error.message})
+                                console.log("error", error)
+                            } else {
+                                res.status(200).json(  data)
+                                console.log('Shipment created successfully!', data)
+                            }
+                        })
                     }
                 })
+                
             })
             .catch(err => {
                 res.status(403).json( {error: err})
