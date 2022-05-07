@@ -52,8 +52,54 @@ router.route("/").post(auth, async (req,res) => {
         }
     })
             
-    
-    
 })
 
+
+// get all scan of node
+router.route("/:nodeCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM scanData WHERE scannedAt = ?"
+    connection.query( query, [req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No scan data found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+
+})
+
+// get stock of node
+router.route("/stock/:nodeCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM scanData WHERE scannedAt = ? and (status = 'created' or status = 'arrived')"
+    connection.query( query, [req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No scan data found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+
+})
+
+// get shipping scan of node
+router.route("/shipping/:nodeCode").get(auth, (req, res) => {
+    const query = "SELECT * FROM scanData WHERE scannedAt = ? and status = 'shipping'"
+    connection.query( query, [req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No scan data found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+
+})
 module.exports = router;
