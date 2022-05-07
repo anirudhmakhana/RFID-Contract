@@ -73,13 +73,12 @@ router.route("/:companycode").get(auth, (req, res) => {
 
 // create companies # only admin can create company
 router.route("/").post(admin_auth, async (req, res) => {
-    const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
+    const { companyCode: companyCode, companyName: companyName, 
              walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
 
     // try {
     const data = { companyCode: companyCode, 
         companyName: companyName, 
-        managerContact: managerContact, 
         walletPublicKey: walletPublicKey, 
         walletPrivateKey: walletPrivateKey}
     const query = "INSERT INTO companies VALUES (?, ?, ?, ?, ?);"
@@ -114,13 +113,12 @@ router.route("/:companycode").delete(admin_auth, (req, res) => {
 })
 
 router.route("/update/:companyCode").put(manager_auth, async (req, res) => {
-    const { companyCode: companyCode, companyName: companyName, managerContact: managerContact, 
+    const { companyCode: companyCode, companyName: companyName, 
              walletPublicKey: walletPublicKey, walletPrivateKey: walletPrivateKey} = req.body
 
     // try {
     const data = { companyCode: companyCode, 
         companyName: companyName, 
-        managerContact: managerContact, 
         walletPublicKey: walletPublicKey, 
         walletPrivateKey: walletPrivateKey}
 
@@ -132,7 +130,7 @@ router.route("/update/:companyCode").put(manager_auth, async (req, res) => {
         else if ( results.length < 1) {
             res.status(404).json( {error: "No company found!"});
         } else {
-            const query = `UPDATE companies SET companyCode='${companyCode}', companyName='${companyName}', managerContact='${managerContact}', walletPublicKey='${walletPublicKey}', walletPrivateKey='${walletPrivateKey}' WHERE companyCode = '${req.params.companyCode}'`
+            const query = `UPDATE companies SET companyCode='${companyCode}', companyName='${companyName}', walletPublicKey='${walletPublicKey}', walletPrivateKey='${walletPrivateKey}' WHERE companyCode = '${req.params.companyCode}'`
             connection.query(query, (error_update) => {
                 if (error_update) {
                     res.status(400).json( {error_update: error_update.message})
