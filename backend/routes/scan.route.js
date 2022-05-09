@@ -102,4 +102,20 @@ router.route("/shipping/:nodeCode").get(auth, (req, res) => {
     })
 
 })
+
+// get company scan status 
+router.route("/status/:companyCode/:status").get(auth, (req, res) => {
+    const query = "SELECT scanData.* FROM scanData JOIN nodes ON nodes.nodeCode = scanData.scannedAt and nodes.companyCode = ? WHERE scanData.status = ?"
+    connection.query( query, [ req.params.companyCode, req.params.status], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No scan data found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+
+})
 module.exports = router;
