@@ -56,9 +56,24 @@ router.route("/").post(auth, async (req,res) => {
 
 
 // get all scan of node
-router.route("/:nodeCode").get(auth, (req, res) => {
+router.route("/node/:nodeCode").get(auth, (req, res) => {
     const query = "SELECT * FROM scanData WHERE scannedAt = ?"
     connection.query( query, [req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No scan data found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
+// get all scan of node
+router.route("/shipment/:shipmentId").get(auth, (req, res) => {
+    const query = "SELECT * FROM scanData WHERE uid = ?"
+    connection.query( query, [req.params.shipmentId], (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
@@ -104,7 +119,7 @@ router.route("/shipping/:nodeCode").get(auth, (req, res) => {
 })
 
 // get company scan status 
-router.route("/status/:companyCode/:status").get(auth, (req, res) => {
+router.route("/status/:status/:companyCode").get(auth, (req, res) => {
     const query = "SELECT scanData.* FROM scanData JOIN nodes ON nodes.nodeCode = scanData.scannedAt and nodes.companyCode = ? WHERE scanData.status = ?"
     connection.query( query, [ req.params.companyCode, req.params.status], (error, results) => {
         if (error) {
@@ -116,6 +131,19 @@ router.route("/status/:companyCode/:status").get(auth, (req, res) => {
             res.status(200).json(results)
         }
     })
-
 })
+
+// router.route("/status/stock/:companyCode").get(auth, (req, res) => {
+//     const query = "SELECT scanData.* FROM scanData JOIN shipments ON shipments.txnHash = scanData.txnHash and nodes.companyCode = ? WHERE shipments.status = 'arrived' or scanData.status = 'created'"
+//     connection.query( query, [ req.params.companyCode, req.params.status], (error, results) => {
+//         if (error) {
+//             res.status(400).json( {error: error.message})
+//         }
+//         else if ( results.length < 1) {
+//             res.status(404).json( {error: "No scan data found!"});
+//         } else {
+//             res.status(200).json(results)
+//         }
+//     })
+// })
 module.exports = router;

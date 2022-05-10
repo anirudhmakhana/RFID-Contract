@@ -90,6 +90,51 @@ router.route('/:id').get(auth, async (req,res) => {
     })
 })
 
+// return arrived or created shipment
+router.route('/stock/:companyCode').get(auth, async (req,res) => {
+    const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status = 'arrived' or shipments.status = 'created'"
+    connection.query( query, [req.params.companyCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
+// return shipment of company based on status
+router.route('/status/:status/:companyCode').get(auth, async (req,res) => {
+    const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status = ?"
+    connection.query( query, [req.params.companyCode, req.params.status], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
+// return incomplete shipment by company
+router.route('/incomplete/:companyCode').get(auth, async (req,res) => {
+    const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status != 'completed'"
+    connection.query( query, [req.params.companyCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
 //get shipment by id and wallet address(publickey)
 router.route('/contract/:id/:address').get(auth, async (req,res) => {
     try {

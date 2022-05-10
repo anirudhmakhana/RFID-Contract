@@ -82,6 +82,67 @@ router.route("/").post(auth, async (req, res) => {
 
 })
 
+// update node
+router.route("/update/:nodeCode").put(auth, async (req, res) => {
+    const {nodeCode: nodeCode, companyCode: companyCode, address:address, lat: lat, lng: lng,
+        phoneNumber: phoneNumber, status: status } = req.body
+
+    // try {
+    const data = {nodeCode: nodeCode, companyCode: companyCode, address:address, lat: lat, lng: lng,
+        phoneNumber: phoneNumber, status: status }
+
+    const query_exist = "SELECT * FROM nodes WHERE nodeCode = ?"
+    connection.query( query_exist,[req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            const query = `UPDATE nodes SET nodeCode='${nodeCode}', companyCode='${companyCode}', address='${address}', lat='${lat}', lng='${lng}', phoneNumber='${phoneNumber}', status='${status}'WHERE nodeCode = '${req.params.nodeCode}'`
+            connection.query(query, (error_update) => {
+                if (error_update) {
+                    res.status(400).json( {error_update: error_update.message})
+                    console.log("error", error_update)
+                } else {
+                    res.status(200).json( data)
+                    console.log('Updated successful!', data)
+                }
+            })
+            console.log('Data : ', data)
+        }
+    })
+})
+
+router.route("/update/status/:nodeCode").patch(auth, async (req, res) => {
+    const {nodeCode: nodeCode, status: status } = req.body
+
+    // try {
+    const data = {nodeCode: nodeCode, status: status }
+
+    const query_exist = "SELECT * FROM nodes WHERE nodeCode = ?"
+    connection.query( query_exist,[req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            const query = `UPDATE nodes SET status='${status}'WHERE nodeCode = '${req.params.nodeCode}'`
+            connection.query(query, (error_update) => {
+                if (error_update) {
+                    res.status(400).json( {error_update: error_update.message})
+                    console.log("error", error_update)
+                } else {
+                    res.status(200).json( data)
+                    console.log('Updated successful!', data)
+                }
+            })
+            console.log('Data : ', data)
+        }
+    })
+})
+
 // delete node by nodeCode
 router.route("/:nodeCode").delete(auth, (req, res) => {
     const query = "DELETE FROM nodes WHERE nodeCode = ?"

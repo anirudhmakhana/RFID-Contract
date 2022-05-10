@@ -198,31 +198,48 @@ router.route('/login').post( async (req,res) => {
             res.status(403).json({ error: 'Invalid password' })
         }
     })
+})
 
-	
+router.route('/checkPassword').post(auth, async (req,res) => {
+    const { username, password } = req.body
+    const query = "SELECT * FROM staffAccounts WHERE username = ?"
+    connection.query( query,[username], async (error, results) => {
+        if (error) {
+            res.status(error.code).json(error.message)
+        }
+         else {
+            user = results[0]
+            
+            if (!user) {
+                return res.status(404).json({ error: 'User not existed' })
+            }
+        
+            if (await bcrypt.compare(password, user['password'])) {
+
+
+                return res.status(200).json(user)
+            }
+        
+            res.status(403).json({ error: 'Invalid password' })
+        }
+    })
 })
 
 // update staff
 router.route("/update/:username").put(manager_auth, async (req, res) => {
     const {
         username: username,
-        password: password,
+        password: plainTextPassword,
         fullName: fullName,
         email: email,
         companyCode: companyCode
     } = req.body
 
     // try {
-    const data = {
-        username: username,
-        password: password,
-        fullName: fullName,
-        email: email,
-        companyCode: companyCode
-    }
+    
 
     const query_exist = "SELECT * FROM staffAccounts WHERE username = ?"
-    connection.query( query_exist,[req.params.username], (error, results) => {
+    connection.query( query_exist,[req.params.username],async (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
@@ -230,6 +247,14 @@ router.route("/update/:username").put(manager_auth, async (req, res) => {
             res.status(404).json( {error: "No account found!"});
         } else {
             console.log(results)
+            const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
+            const data = {
+                username: username,
+                password: password,
+                fullName: fullName,
+                email: email,
+                companyCode: companyCode
+            }
             const query = `UPDATE staffAccounts SET username='${username}', password='${password}', fullName='${fullName}', email='${email}', companyCode='${companyCode}' WHERE username = '${req.params.username}'`
             connection.query(query, (error_update) => {
                 if (error_update) {

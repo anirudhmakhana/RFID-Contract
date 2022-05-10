@@ -81,7 +81,7 @@ router.route("/").post(admin_auth, async (req, res) => {
         companyName: companyName, 
         walletPublicKey: walletPublicKey, 
         walletPrivateKey: walletPrivateKey}
-    const query = "INSERT INTO companies VALUES (?, ?, ?, ?, ?);"
+    const query = "INSERT INTO companies VALUES (?, ?, ?, ?);"
     connection.query(query, Object.values(data), (error) => {
         if (error) {
             res.status(400).json( {error: error.message})
@@ -95,19 +95,19 @@ router.route("/").post(admin_auth, async (req, res) => {
 
 })
 
-router.route("/:companycode").delete(admin_auth, (req, res) => {
+router.route("/:companyCode").delete(admin_auth, (req, res) => {
     const staff_query = "DELETE FROM staffAccounts WHERE companyCode = ?"
     connection.query( staff_query, req.params.companyCode, (error, results) => {
     })
     const query = "DELETE FROM companies WHERE companyCode = ?"
-    connection.query( query,[req.params.companycode], (error, results) => {
+    connection.query( query,[req.params.companyCode], (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No company found!"});
         } else {
-            res.status(200).json({message:`Company ${req.params.companycode} is deleted.`})
+            res.status(200).json({message:`Company ${req.params.companyCode} is deleted.`})
         }
     })
 })
@@ -123,7 +123,7 @@ router.route("/update/:companyCode").put(manager_auth, async (req, res) => {
         walletPrivateKey: walletPrivateKey}
 
     const query_exist = "SELECT * FROM companies WHERE companyCode = ?"
-    connection.query( query_exist,[req.params.companycode], (error, results) => {
+    connection.query( query_exist,[req.params.companyCode], (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
