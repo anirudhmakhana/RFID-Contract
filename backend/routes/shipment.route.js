@@ -135,6 +135,21 @@ router.route('/incomplete/:companyCode').get(auth, async (req,res) => {
     })
 })
 
+// return every shipment that related to the company (originNode, currentNode, destinationNode)
+router.route('/related/:companyCode').get(auth, async (req,res) => {
+    const query = "SELECT DISTINCT shipments.* FROM shipments JOIN nodes ON (nodes.nodeCode = shipments.currentNode or nodes.nodeCode = shipments.originNode or shipments.destinationNode)and nodes.companyCode = ?"
+    connection.query( query, [req.params.companyCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
 //get shipment by id and wallet address(publickey)
 router.route('/contract/:id/:address').get(auth, async (req,res) => {
     try {
