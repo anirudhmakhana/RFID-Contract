@@ -105,6 +105,21 @@ router.route('/stock/:companyCode').get(auth, async (req,res) => {
     })
 })
 
+// return arrived or created shipment in node
+router.route('/stock/node/:nodeCode').get(auth, async (req,res) => {
+    const query = "SELECT * FROM shipments WHERE (status = 'arrived' or status = 'created') and currentNode = ?"
+    connection.query( query, [req.params.nodeCode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
 // return shipment of company based on status
 router.route('/status/:status/:companyCode').get(auth, async (req,res) => {
     const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status = ?"

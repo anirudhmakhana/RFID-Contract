@@ -158,6 +158,21 @@ router.route("/:nodeCode").delete(auth, (req, res) => {
     })
 })
 
+// return node that related to the shipment (currentNode or used to be)
+router.route('/related/:shipmentId').get(auth, async (req,res) => {
+    const query = "SELECT DISTINCT scannedAt FROM scanData WHERE uid = ?"
+    connection.query( query, [req.params.shipmentId], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No node found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
+
 // get node by nodeCode
 router.route("/:nodeCode").get(auth, (req, res) => {
     const query = "SELECT * FROM nodes WHERE nodeCode = ?"
@@ -189,6 +204,20 @@ router.route("/bycompany/:companyCode").get(auth, (req, res) => {
     })
 })
 
+// have stocking shipment that have the same destination
+router.route('/stock/samedestination/:destinationNode').get(auth, async (req,res) => {
+    const query = "SELECT DISTINCT shipments.currentNode FROM shipments WHERE destinationNode = ? and status != 'shipping' and status != 'completed'"
+    connection.query( query, [req.params.destinationNode], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
+            res.status(404).json( {error: "No shipment found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+})
 
 // Read active nodes of company
 router.route("/active/:companyCode").get(auth, (req, res) => {
