@@ -226,7 +226,7 @@ router.route('/checkPassword').post(auth, async (req,res) => {
 })
 
 // update staff
-router.route("/update/:username").put(manager_auth, async (req, res) => {
+router.route("/update/:username").put(auth, async (req, res) => {
     const {
         username: username,
         password: plainTextPassword,
