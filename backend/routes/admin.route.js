@@ -6,40 +6,37 @@ let express = require('express'),
     SALT_WORK_FACTOR = 10
     jwt = require('jsonwebtoken')
 
-const createError = require('http-errors');
-const mysql = require('mysql')
-
-const connection = mysql.createConnection( {
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database:'company_user_data',
-    port: 8889
-})
-
-connection.connect((err) => {
-    if (err) {
-        console.log("MySQL connection error : ", err)
-        return 
-    }
-    console.log("MySQL successfully connected.")
-})
-
+const AdminAccount = require("../models/adminAccount");
 
 // Read accounts
 router.route("/").get((req, res) => {
-    const query = "SELECT * FROM adminAccounts"
-    connection.query( query, (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
+    AdminAccount.findAll()
+    .then(results => {
+        if ( results.length < 1) {
             res.status(404).json( {error: "No admin account found!"});
         } else {
             res.status(200).json(results)
         }
     })
+    .catch( error => {
+        res.status(400).json( {error: error.message})
 
+    })
+})
+
+router.route("/:username").get((req, res) => {
+    AdminAccount.findOne({where:{username:req.params.username}})
+    .then(results => {
+        if ( results.length < 1) {
+            res.status(404).json( {error: "No admin account found!"});
+        } else {
+            res.status(200).json(results)
+        }
+    })
+    .catch( error => {
+        res.status(400).json( {error: error.message})
+
+    })
 })
 
 // register admin account
@@ -60,58 +57,62 @@ router.route("/register").post( async (req, res) => {
 		})
 	}
     const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
+    AdminAccount.findOne({where:{username:username}})
+    .then(response => {
+        if (response) {
+            res.status(404).json( {error: "Username used!"});
 
-    // try {
-    const data = {
-        username: username,
-        password: password
-    }
-    const query = "INSERT INTO adminAccounts VALUES (?, ?);"
-    connection.query(query, Object.values(data), (error) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-            console.log("error", error)
         } else {
-            res.status(200).json( data)
-            console.log('Account created successfully!', data)
+            const newAccount = new AdminAccount( {
+                username: username,
+                password: password
+            })
+            newAccount.save()
+            .then( result => {
+                res.status(200).json( {username:username, password:password})
+                console.log('Account created successfully!', newAccount)
+            })
         }
     })
-    console.log('Data : ', data)
+    .catch((error) => {
+        res.status(400).json( {error: error.message})
+        console.log("error", error)
+    });
+    
 })
 
 // login as admin
 router.route('/login').post( async (req,res) => {
     const { username, password } = req.body
-    const query = "SELECT * FROM adminAccounts WHERE username = ?"
-    connection.query( query,[username], async (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
+    AdminAccount.findOne({ where: { username:username } })
+    .then( async result => {
+        console.log(result)
+        user = result
+        if (!user) {
+            return res.status(404).json({  error: 'Admin account not existed' })
         }
-        else {
-            user = results[0]
-            if (!user) {
-                return res.status(404).json({  error: 'Admin account not existed' })
-            }
-        
-            if (await bcrypt.compare(password, user['password'])) {
-                // the username, password combination is successful
-        
-                const admin_token = jwt.sign(
-                    {
-                        username: username
-                    },
-                    process.env.ADMIN_TOKEN_KEY
-                )
-                user.token = admin_token
-
-                return res.status(200).json(user)
-            }
-        
-            res.status(403).json({ error: 'Invalid password' })
+    
+        if (await bcrypt.compare(password, user['password'])) {
+            // the username, password combination is successful
+    
+            const admin_token = jwt.sign(
+                {
+                    username: username
+                },
+                process.env.ADMIN_TOKEN_KEY
+            )
+            var userData = JSON.stringify(user )
+            userData = JSON.parse(userData)
+            userData.token = admin_token
+            return res.status(200).json(userData)
         }
+    
+        res.status(403).json({ error: 'Invalid password' })
     })
+    .catch(error => {
+        res.status(400).json( {error: error.message})
 
-	
+    })	
 })
 
 module.exports = router;

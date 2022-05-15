@@ -5,91 +5,80 @@ let express = require('express'),
     SALT_WORK_FACTOR = 10
     jwt = require('jsonwebtoken')
 
-const createError = require('http-errors');
-const mysql = require('mysql')
+
 const auth = require('../utils/auth')
 const admin_auth = require('../utils/admin-auth')
 const manager_auth = require('../utils/manager-auth')
+const StaffAccount =require("../models/staffAccount")
+const Company = require("../models/company")
+// const connection = mysql.createConnection( {
+//     host: 'localhost',
+//     user: 'root',
+//     password: 'root',
+//     database:'company_user_data',
+//     port: 8889
+// })
 
-const connection = mysql.createConnection( {
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database:'company_user_data',
-    port: 8889
-})
-
-connection.connect((err) => {
-    if (err) {
-        console.log("MySQL connection error : ", err)
-        return 
-    }
-    console.log("MySQL successfully connected.")
-})
+// connection.connect((err) => {
+//     if (err) {
+//         console.log("MySQL connection error : ", err)
+//         return 
+//     }
+//     console.log("MySQL successfully connected.")
+// })
 
 // Read accounts
 router.route("/").get(admin_auth, (req, res) => {
-    const query = "SELECT * FROM staffAccounts"
-    connection.query( query, (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            res.status(404).json( {status: "No staff account found!"});
+    StaffAccount.findAll()
+    .then(results => {
+        if ( results.length < 1) {
+            res.status(404).json( {error: "No staff found!"});
         } else {
             res.status(200).json(results)
         }
     })
+    .catch( error => {
+        res.status(400).json( {error: error.message})
+
+    })
+
 })
 
 // Read accounts
 router.route("/:username").get((req, res) => {
-    const query = "SELECT * FROM staffAccounts WHERE username = ?"
-    connection.query( query, req.params.username, (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            res.status(404).json( {status: "No staff account found!"});
-        } else {
-            res.status(200).json(results[0])
-        }
+    StaffAccount.findOne({ where: {username:req.params.username}})
+    .then(result => {
+        res.status(200).json(result)
     })
-
+    .catch( error => {
+        res.status(400).json( {error: error.message})
+    })
 })
 
 // Get account by company code
 router.route("/getByCompany/:companyCode").get(auth, (req, res) => {
-    const query = "SELECT * FROM staffAccounts WHERE companyCode = ?"
-    connection.query( query, req.params.companyCode, (error, results) => {
-        if (error) {
-            console.log(error.message)
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            console.log("no staff")
-            res.status(404).json( {status: "No staff account found!"});
+    StaffAccount.findAll({where:{companyCode: req.params.companyCode}})
+    .then(results => {
+        if ( results.length < 1) {
+            res.status(404).json( {error: "No staff found!"});
         } else {
             res.status(200).json(results)
         }
     })
+    .catch( error => {
+        res.status(400).json( {error: error.message})
 
+    })
 })
 
 // delete by username
 router.route("/:username").delete(manager_auth, (req, res) => {
-    const query = "DELETE FROM staffAccounts WHERE username = ?"
-    connection.query( query, req.params.username, (error, results) => {
-        if (error) {
-            console.log(error.message)
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            console.log("no staff")
-            res.status(404).json( {status: "No staff account found!"});
-        } else {
-            res.status(200).json({message:`Account ${req.params.username} is deleted.`})
-        }
+    StaffAccount.destroy({ where: {username:req.params.username}})
+    .then( result => {
+        res.status(200).json({message:`User ${req.params.username} is deleted.`})
+    } )
+    .catch( error => {
+        res.status(400).json( {error: error.message})
     })
 
 })
@@ -111,19 +100,14 @@ router.route("/register").post(manager_auth, async (req, res) => {
 			error: 'Password should be at least 6 characters'
 		})
 	}
-    const usr = "SELECT * FROM staffAccounts WHERE username = ?"
-    connection.query( usr,[username], (error_user, results) => {
-        if (results[0]) {
-            return res.status(403).json({error:"Username already existed!", res: results})
+    StaffAccount.findOne({where:{username:username}})
+    .then( res_user => {
+        if (res_user) {
+            res.status(404).json( {error: "Username used!"});
         } else {
-            const comp = "SELECT * FROM companies WHERE companyCode = ?"
-            connection.query( comp,[companyCode], async (error_comp, results) => {
-                if (error_comp) {
-                    return res.status(400).json( {error: error_comp.message})
-                }
-                else if ( results.length < 1) {
-                    return res.status(404).json( {error_comp: "No company found!"});
-                } else {
+            Company.findOne({where:{companyCode:companyCode}})
+            .then( async res_company => {
+                if (res_company) {
                     const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
 
                     // try {
@@ -135,84 +119,74 @@ router.route("/register").post(manager_auth, async (req, res) => {
                         positionLevel: positionLevel.toLowerCase(),
                         companyCode: companyCode
                     }
-                    const query = "INSERT INTO staffAccounts VALUES (?, ?, ?, ?, ?, ?);"
-                    connection.query(query, Object.values(data), (error) => {
-                        if (error) {
-                            res.status(400).json( error )
-                            console.log("error", error)
-                        } else {
-                            res.status(201).json( data)
-                            console.log('Account created successfully!', data)
-                        }
+                    const newAccount = new StaffAccount(data)
+                    newAccount.save()
+                    .then( result => {
+                        res.status(200).json( data)
+                        console.log('Account created successfully!', newAccount)
                     })
-                    console.log('Data : ', data)
-
+                }
+                else {
+                    res.status(404).json( {error: "Company not found!"});
                 }
             })
-            
         }
     })
+    .catch((error) => {
+        res.status(400).json( {error: error.message})
+        console.log("error", error)
+    });
 
 })
 
 // login as staff user
 router.route('/login').post( async (req,res) => {
     const { username, password } = req.body
-    const query = "SELECT * FROM staffAccounts WHERE username = ?"
-    connection.query( query,[username], async (error, results) => {
-        if (error) {
-            res.status(error.code).json(error.message)
+    StaffAccount.findOne({ where: { username:username } })
+    .then( async result => {
+        console.log(result)
+        user = result
+        if (!user) {
+            return res.status(404).json({  error: 'Staff account not existed' })
         }
-         else {
-            user = results[0]
-            
-            if (!user) {
-                return res.status(404).json({ error: 'User not existed' })
-            }
-        
-            if (await bcrypt.compare(password, user['password'])) {
-                // the username, password combination is successful
-                if (user.positionLevel == "manager") {
-                    const token = jwt.sign(
-                        {
-                            username: username,
-                        },
-                        process.env.MANAGER_TOKEN_KEY
-                    )
-                    user.token = token
 
-                } else {
-                    const token = jwt.sign(
-                        {
-                            username: username,
-                        },
-                        process.env.TOKEN_KEY
-                    )
-                    user.token = token
-
-                }
-
-                return res.status(200).json(user)
-            }
-        
-            res.status(403).json({ error: 'Invalid password' })
+        if (await bcrypt.compare(password, user['password'])) {
+            // the username, password combination is successful
+            var token = jwt.sign(
+                {
+                    username: username
+                },
+                process.env.TOKEN_KEY
+            )
+            if (user.positionLevel == "manager") {
+                token = jwt.sign(
+                    {
+                        username: username,
+                    },
+                    process.env.MANAGER_TOKEN_KEY
+                )
+            } 
+            var userData = JSON.stringify(user )
+            userData = JSON.parse(userData)
+            userData.token = token
+            return res.status(200).json(userData)
         }
+    
+        res.status(403).json({ error: 'Invalid password' })
     })
+    .catch(error => {
+        res.status(400).json( {error: error.message})
+
+    })	
+    
 })
 
 router.route('/checkPassword').post(auth, async (req,res) => {
     const { username, password } = req.body
-    const query = "SELECT * FROM staffAccounts WHERE username = ?"
-    connection.query( query,[username], async (error, results) => {
-        if (error) {
-            res.status(error.code).json(error.message)
-        }
-         else {
-            user = results[0]
-            
-            if (!user) {
-                return res.status(404).json({ error: 'User not existed' })
-            }
+    StaffAccount.findOne({where:{username:username}})
+    .then(async result => {
+        if (result) {
+            user = result 
         
             if (await bcrypt.compare(password, user['password'])) {
 
@@ -221,7 +195,12 @@ router.route('/checkPassword').post(auth, async (req,res) => {
             }
         
             res.status(403).json({ error: 'Invalid password' })
+        } else {
+            res.status(404).json({ error: 'User not existed' })
         }
+    })
+    .catch( error => {
+        res.status(400).json({error: error.message})
     })
 })
 
@@ -235,18 +214,9 @@ router.route("/update/:username").put(auth, async (req, res) => {
         companyCode: companyCode
     } = req.body
 
-    // try {
-    
-
-    const query_exist = "SELECT * FROM staffAccounts WHERE username = ?"
-    connection.query( query_exist,[req.params.username],async (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            res.status(404).json( {error: "No account found!"});
-        } else {
-            console.log(results)
+    StaffAccount.findOne({where:{username: req.params.username}})
+    .then(async result => {
+        if ( result ) {
             const password = await bcrypt.hash(plainTextPassword, SALT_WORK_FACTOR)
             const data = {
                 username: username,
@@ -255,21 +225,22 @@ router.route("/update/:username").put(auth, async (req, res) => {
                 email: email,
                 companyCode: companyCode
             }
-            const query = `UPDATE staffAccounts SET username='${username}', password='${password}', fullName='${fullName}', email='${email}', companyCode='${companyCode}' WHERE username = '${req.params.username}'`
-            connection.query(query, (error_update) => {
-                if (error_update) {
-                    res.status(400).json( {error_update: error_update.message})
-                    console.log("error", error_update)
-                } else {
-                    resdata = data
-                    resdata.positionLevel = results[0].positionLevel
-                    res.status(200).json( resdata)
-                    console.log('Updated successful!', resdata)
-                }
-            })
-            console.log('Data : ', data)
+            result.update(data)
+            .then( response => {
+                resdata = data
+                resdata.positionLevel = result.positionLevel
+                res.status(200).json( resdata)
+                console.log('Updated successful!', resdata)
+            })  
+        } else {
+            res.status(404).json( {error: "No staff found!"});
+
         }
     })
+    .catch((error) => {
+        res.status(400).json( {error: error.message})
+        console.log("error", error)
+    });
 
 })
 

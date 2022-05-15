@@ -1,6 +1,5 @@
 let express = require('express'),
     router = express.Router()
-const   createError = require('http-errors');
 
 const Web3 = require('web3');
 const HDWalletProvider = require('@truffle/hdwallet-provider')
@@ -13,14 +12,18 @@ const Tx = require('ethereumjs-tx').Transaction
 const contractAddress = "0x70CB7E6DEFd1a235Ff11a45e4a382F6E0dFC7DB7"
 const contractABI = abi["abi"]
 const auth = require('../utils/auth')
-
-const mysql = require('mysql')
+const Shipment = require("../models/shipment")
+const ScanData = require("../models/scanData")
+const Node = require("../models/node")
+const mysql = require('mysql2');
+const sequelize = require('../database');
+const ShipmentScan = require('../models/shipmentScan');
 
 const connection = mysql.createConnection( {
     host: 'localhost',
     user: 'root',
     password: 'root',
-    database:'company_user_data',
+    database:process.env.DB_NAME,
     port: 8889
 })
 
@@ -62,105 +65,192 @@ async function web3Initializer() {
 
 // get all shipments from SQL
 router.route("/").get(auth, (req, res) => {
-    const query = "SELECT * FROM shipments"
-    connection.query( query, (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            res.status(404).json( {error: "No shipment found!"});
+    Shipment.findAll()
+    .then (async results => {
+        if (results.length < 1 ) { 
+            res.status(404).json( {error: "No shipment found!"})
         } else {
-            res.status(200).json(results)
+        
+            var shipments = JSON.stringify(results )
+            shipments = JSON.parse(shipments)
+            var result_ship = []
+            for ( let i = 0; i < shipments.length; i++ ) { 
+                let scan = await ScanData.findOne( {where:{txnHash:shipments[i].txnHash}})
+                if ( scan ) {
+                    shipments[i].currentNode = scan.scannedAt
+                    shipments[i].status = scan.status
+                    shipments[i].nextNode = scan.nextNode
+                    result_ship.push(shipments[i])
+                }
+            }
+            res.status(200).json(result_ship)
+
         }
+    })
+    // , [sequelize.col('ScanData.scannedAt'), 'currentNode'],[ sequelize.col('ScanData.status'), 'status']],
+    // include: [{model:ScanData, where:{txnHash : sequelize.col('Shipment.txnHash')},  attributes:['scannedAt', 'status']}, {model:Node, attributes:['companyCode']}]})
+    
+    .catch( error => {
+        res.status(400).json( {error: error.message})
+
     })
 
 })
 
-router.route('/:id').get(auth, async (req,res) => {
-    const query = "SELECT * FROM shipments WHERE uid = ?"
-    connection.query( query, [req.params.id], (error, results) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-        }
-        else if ( results.length < 1) {
-            res.status(404).json( {error: "No shipment found!"});
+router.route('/:uid').get(auth, async (req,res) => {
+    Shipment.findOne( {where:{uid: req.params.uid}})
+    .then (async results => {
+        if (!results ) { 
+            res.status(404).json( {error: "No shipment found!"})
         } else {
-            res.status(200).json(results[0])
+            var shipment = JSON.stringify(results )
+            shipment = JSON.parse(shipment)
+            let scan = await ScanData.findOne( {where:{txnHash:shipment.txnHash}})
+            if ( scan ) {
+                shipment.currentNode = scan.scannedAt
+                shipment.status = scan.status
+                shipment.nextNode = scan.nextNode
+            }
+            
+            res.status(200).json(shipment)
+
         }
+    })
+    // , [sequelize.col('ScanData.scannedAt'), 'currentNode'],[ sequelize.col('ScanData.status'), 'status']],
+    // include: [{model:ScanData, where:{txnHash : sequelize.col('Shipment.txnHash')},  attributes:['scannedAt', 'status']}, {model:Node, attributes:['companyCode']}]})
+    
+    .catch( error => {
+        res.status(400).json( {error: error.message})
+
     })
 })
 
 // return arrived or created shipment
 router.route('/stock/:companyCode').get(auth, async (req,res) => {
-    const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status = 'arrived' or shipments.status = 'created'"
-    connection.query( query, [req.params.companyCode], (error, results) => {
+    const query = "SELECT shipments.* FROM shipments JOIN scanData ON scanData.txnHash = shipments.txnHash JOIN nodes ON nodes.nodeCode = scanData.scannedAt and nodes.companyCode = ? WHERE scanData.status = 'arrived' or scanData.status = 'created'"
+    connection.query( query, [req.params.companyCode],async (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No shipment found!"});
         } else {
-            res.status(200).json(results)
+            var shipments = results
+            var result_ship = []
+            for ( let i = 0; i < shipments.length; i++ ) { 
+                let scan = await ScanData.findOne( {where:{txnHash:shipments[i].txnHash}})
+                if ( scan ) {
+                    shipments[i].currentNode = scan.scannedAt
+                    shipments[i].status = scan.status
+                    shipments[i].nextNode = scan.nextNode
+                    result_ship.push(shipments[i])
+                }
+            }
+            res.status(200).json(result_ship)
         }
     })
 })
 
 // return arrived or created shipment in node
 router.route('/stock/node/:nodeCode').get(auth, async (req,res) => {
-    const query = "SELECT * FROM shipments WHERE (status = 'arrived' or status = 'created') and currentNode = ?"
-    connection.query( query, [req.params.nodeCode], (error, results) => {
+    const query = "SELECT shipments.* FROM shipments JOIN scanData ON scanData.txnHash = shipments.txnHash WHERE (scanData.status = 'arrived' or scanData.status = 'created') and scanData.scannedAt = ?"
+    connection.query( query, [req.params.nodeCode],async (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No shipment found!"});
         } else {
-            res.status(200).json(results)
+            var shipments = results
+            var result_ship = []
+            for ( let i = 0; i < shipments.length; i++ ) { 
+                let scan = await ScanData.findOne( {where:{txnHash:shipments[i].txnHash}})
+                if ( scan ) {
+                    shipments[i].currentNode = scan.scannedAt
+                    shipments[i].status = scan.status
+                    shipments[i].nextNode = scan.nextNode
+                    result_ship.push(shipments[i])
+                }
+            }
+            res.status(200).json(result_ship)
         }
     })
 })
 
 // return shipment of company based on status
 router.route('/status/:status/:companyCode').get(auth, async (req,res) => {
-    const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status = ?"
-    connection.query( query, [req.params.companyCode, req.params.status], (error, results) => {
+    const query = "SELECT shipments.* FROM shipments JOIN scanData ON scanData.txnHash = shipments.txnHash JOIN nodes ON nodes.nodeCode = scanData.scannedAt and nodes.companyCode = ? WHERE scanData.status = ?"
+    connection.query( query, [req.params.companyCode,req.params.status],async (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No shipment found!"});
         } else {
-            res.status(200).json(results)
+            var shipments = results
+            var result_ship = []
+            for ( let i = 0; i < shipments.length; i++ ) { 
+                let scan = await ScanData.findOne( {where:{txnHash:shipments[i].txnHash}})
+                if ( scan ) {
+                    shipments[i].currentNode = scan.scannedAt
+                    shipments[i].status = scan.status
+                    shipments[i].nextNode = scan.nextNode
+                    result_ship.push(shipments[i])
+                }
+            }
+            res.status(200).json(result_ship)
         }
     })
 })
 
 // return incomplete shipment by company
 router.route('/incomplete/:companyCode').get(auth, async (req,res) => {
-    const query = "SELECT shipments.* FROM shipments JOIN nodes ON nodes.nodeCode = shipments.currentNode and nodes.companyCode = ? WHERE shipments.status != 'completed'"
-    connection.query( query, [req.params.companyCode], (error, results) => {
+    const query = "SELECT shipments.* FROM shipments JOIN scanData ON scanData.txnHash = shipments.txnHash JOIN nodes ON nodes.nodeCode = scanData.scannedAt and nodes.companyCode = ? WHERE scanData.status != 'completed'"
+    connection.query( query, [req.params.companyCode], async (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No shipment found!"});
         } else {
-            res.status(200).json(results)
+            var shipments = results
+            var result_ship = []
+            for ( let i = 0; i < shipments.length; i++ ) { 
+                let scan = await ScanData.findOne( {where:{txnHash:shipments[i].txnHash}})
+                if ( scan ) {
+                    shipments[i].currentNode = scan.scannedAt
+                    shipments[i].status = scan.status
+                    shipments[i].nextNode = scan.nextNode
+                    result_ship.push(shipments[i])
+                }
+            }
+            res.status(200).json(result_ship)
         }
     })
 })
 
 // return every shipment that related to the company (originNode, currentNode, destinationNode)
 router.route('/related/:companyCode').get(auth, async (req,res) => {
-    const query = "SELECT DISTINCT shipments.* FROM shipments JOIN nodes ON (nodes.nodeCode = shipments.currentNode or nodes.nodeCode = shipments.originNode or shipments.destinationNode)and nodes.companyCode = ?"
-    connection.query( query, [req.params.companyCode], (error, results) => {
+    const query = "SELECT DISTINCT shipments.* FROM shipments JOIN scanData ON scanData.txnHash = shipments.txnHash JOIN nodes ON (nodes.nodeCode = scanData.scannedAt or nodes.nodeCode = shipments.originNode or nodes.nodeCode = shipments.destinationNode) and nodes.companyCode = ?"
+    connection.query( query, [req.params.companyCode], async (error, results) => {
         if (error) {
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
             res.status(404).json( {error: "No shipment found!"});
         } else {
-            res.status(200).json(results)
+            var shipments = results
+            var result_ship = []
+            for ( let i = 0; i < shipments.length; i++ ) { 
+                let scan = await ScanData.findOne( {where:{txnHash:shipments[i].txnHash}})
+                if ( scan ) {
+                    shipments[i].currentNode = scan.scannedAt
+                    shipments[i].status = scan.status
+                    shipments[i].nextNode = scan.nextNode
+                    result_ship.push(shipments[i])
+                }
+            }
+            res.status(200).json(result_ship)
         }
     })
 })
@@ -243,24 +333,43 @@ router.route("/centralize/").post(auth, async (req,res) => {
     const { uid: uid, description: description, 
         originNode: originNode, currentNode: currentNode, destinationNode:destinationNode,
         companyCode:companyCode, status:status, scannedTime:scannedTime, transactionHash:transactionHash} = req.body
-    const data = { uid: uid,
-        description: description, 
+
+    const scan_data = 
+    {txnHash: transactionHash, 
+    scannedAt: originNode,
+    status: "created",
+    nextNode: null,
+    scannedTime: scannedTime}
+    const scan_ship_data = 
+    {
+        uid:uid,
+        scanDatumTxnHash: transactionHash
+    }
+    const shipment_data = {
+        uid: uid,
+        description: description,
         originNode: originNode,
-        currentNode: currentNode,
-        destinationNode:destinationNode,
-        companyCode:companyCode,
-        status:status,
-        scannedTime:scannedTime, 
-        transactionHash:transactionHash}
-    const query = "INSERT INTO shipments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
-    connection.query(query,  Object.values(data), (error) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-            console.log("error", error)
-        } else {
-            res.status(200).json( data )
-        }
-    })      
+        destinationNode: destinationNode,
+        txnHash: transactionHash
+    }
+    const newScan = new ScanData(scan_data)
+    const newScanShip = new ShipmentScan(scan_ship_data)
+    const newShipment = new Shipment(shipment_data)
+    newScan.save()
+    .then(result => {
+        newShipment.save()
+        .then( result_ship => {
+            newScanShip.save()
+            .then( result_scan_ship => {
+                res.status(200).json(  shipment_data)
+                console.log('Shipment created successfully!', shipment_data)
+            })
+        })
+    })
+    .catch(error => {
+        res.status(400).json( {error: error.message})
+        console.log("error", error)
+    })
     
 })
 
@@ -301,28 +410,52 @@ router.route("/update/").put(auth, async (req,res) => {
 router.route("/centralize/update/").put(auth, async (req,res) => {
     const { uid: uid, description: description, 
         originNode: originNode, currentNode: currentNode, destinationNode:destinationNode,
-        companyCode:companyCode, status:status, scannedTime:scannedTime, transactionHash:transactionHash} = req.body
-    const data = { uid: uid,
-        description: description, 
-        originNode: originNode,
-        currentNode: currentNode,
-        destinationNode:destinationNode,
-        companyCode:companyCode,
-        status:status,
-        scannedTime:scannedTime, 
-        transactionHash:transactionHash}
-    const query = `UPDATE shipments SET uid='${uid}', description='${description}', originNode='${originNode}', currentNode='${currentNode}',
-    destinationNode='${destinationNode}', companyCode='${companyCode}', status='${status}', scannedTime='${scannedTime}', txnHash='${transactionHash}'
-    WHERE uid = '${uid}'`
+        nextNode: nextNode, companyCode:companyCode, status:status, scannedTime:scannedTime, transactionHash:transactionHash} = req.body
 
-    connection.query(query, (error) => {
-        if (error) {
-            res.status(400).json( {error: error.message})
-            console.log("error", error)
+    const scan_data = 
+    {txnHash: transactionHash, 
+    scannedAt: originNode,
+    status: status,
+    nextNode: nextNode,
+    scannedTime: scannedTime}
+    const scan_ship_data = 
+    {
+        uid:uid,
+        scanDatumTxnHash: transactionHash
+    }
+    const shipment_data = {
+        uid: uid,
+        description: description,
+        originNode: originNode,
+        destinationNode: destinationNode,
+        txnHash: transactionHash
+    }
+    const newScan = new ScanData(scan_data)
+    const newScanShip = new ShipmentScan(scan_ship_data)
+    Shipment.findOne({where:{uid:uid}})
+    .then(result_ship => {
+
+        if ( result_ship ) {
+            newScan.save()
+            .then(result_scan => {
+                result_ship.update(scan_data)
+                .then( result_update => {
+                    newScanShip.save()
+                    .then( result_scan_ship => {
+                        res.status(200).json(  shipment_data)
+                        console.log('Shipment updated successfully!', scan_ship_data, shipment_data)
+                    })
+    
+            })
+        })
         } else {
-            res.status(200).json( data )
+            res.status(404).json( {error: "No shipment found!"});
         }
-    })      
+    })
+    .catch((error) => {
+        res.status(400).json( {error: error.message})
+        console.log("error", error)
+    });
     
 })
 

@@ -1,13 +1,29 @@
 require("dotenv").config({ path: "../.env" });
 //server file
 let express = require("express"),
-  mongoose = require("mongoose"),
   cors = require("cors"),
-  bodyParser = require("body-parser"),
-  dbConfig = require("./database/db");
+  bodyParser = require("body-parser")
+  // dbConfig = require("./database");
 
-//const artifacts = require('./build/Inbox.json');
+const createError = require('http-errors');
+const AdminAccount = require("./models/adminAccount")
+const StaffAccount = require("./models/staffAccount")
+const Company = require("./models/company")
+const Node = require("./models/node")
+const ScanData = require("./models/scanData")
+const Shipment = require("./models/shipment");
+const ShipmentScan = require("./models/shipmentScan");
 
+StaffAccount.belongsTo(Company, { foreignKey: 'companyCode' });
+Node.belongsTo(Company, { foreignKey: 'companyCode' });
+Shipment.belongsTo(Node, {foreignKey: 'originNode'});
+Shipment.belongsTo(Node, {foreignKey: 'destinationNode'});
+Shipment.belongsToMany(ScanData, { through: ShipmentScan, foreignKey: 'uid' });
+ScanData.belongsTo(Node, {foreignKey: 'scannedAt'});
+ScanData.belongsTo(Node, {foreignKey: 'nextNode'});
+// ScanData.belongsTo(Shipment, {foreignKey: 'uid'});
+
+// Company.hasMany(StaffAccount, { foreignKey: 'companyCode' });
 //Express route
 const companyRoute = require("../backend/routes/company.route");
 const adminRoute = require("../backend/routes/admin.route");
@@ -15,19 +31,6 @@ const shipmentRoute = require("../backend/routes/shipment.route");
 const staffRoute = require("../backend/routes/staff.route");
 const nodeRoute = require("../backend/routes/node.route");
 const scanRoute = require("../backend/routes/scan.route");
-
-// // Connecting MongoDB
-// mongoose.Promise = global.Promise;
-// // console.log("check", process.env)
-// mongoose.connect(dbConfig.db, {
-//     useNewUrlParser: true
-// }).then( () => {
-//     console.log('Database successfully connected');
-// },
-//     error => {
-//         console.log('Could not connect to database: ' + error);
-//     }
-// )
 
 const app = express();
 app.use(bodyParser.json());
@@ -37,8 +40,8 @@ app.use(
   })
 );
 app.use(cors());
-app.use("/company", companyRoute);
 app.use("/admin", adminRoute);
+app.use("/company", companyRoute);
 app.use("/staff", staffRoute);
 app.use("/shipment", shipmentRoute);
 app.use("/node", nodeRoute);
@@ -61,17 +64,3 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode).send(err.message);
 });
 
-// const appBlockChain = express();
-
-// appBlockChain.use(bodyParser.json());
-// appBlockChain.use(
-//   bodyParser.urlencoded({
-//     extended: true,
-//   })
-// );
-// appBlockChain.use(cors());
-// appBlockChain.use("/shipment", shipmentRoute);
-
-// appBlockChain.listen(4010, () => {
-//   console.log("Connected to port " + 4010);
-// });
