@@ -21,8 +21,8 @@ const ShipmentScan = require('../models/shipmentScan');
 
 const connection = mysql.createConnection( {
     host: 'localhost',
-    user: 'root',
-    password: 'root',
+    user: process.env.DB_USER,
+    password:  process.env.DB_PASS,
     database:process.env.DB_NAME,
     port: 8889
 })

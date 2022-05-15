@@ -19,12 +19,19 @@ const { Op } = require("sequelize");
 
 const connection = mysql.createConnection( {
     host: 'localhost',
-    user: 'root',
-    password: 'root',
+    user: process.env.DB_USER,
+    password:  process.env.DB_PASS,
     database:process.env.DB_NAME,
     port: 8889
 })
 
+connection.connect((err) => {
+    if (err) {
+        console.log("MySQL connection error : ", err)
+        return 
+    }
+    console.log("MySQL successfully connected.")
+})
 // get all scanData
 router.route("/").get(auth, (req, res) => {
     ScanData.findAll()

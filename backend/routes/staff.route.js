@@ -11,21 +11,21 @@ const admin_auth = require('../utils/admin-auth')
 const manager_auth = require('../utils/manager-auth')
 const StaffAccount =require("../models/staffAccount")
 const Company = require("../models/company")
-// const connection = mysql.createConnection( {
-//     host: 'localhost',
-//     user: 'root',
-//     password: 'root',
-//     database:'company_user_data',
-//     port: 8889
-// })
+const connection = mysql.createConnection( {
+    host: 'localhost',
+    user: process.env.DB_USER,
+    password:  process.env.DB_PASS,
+    database:process.env.DB_NAME,
+    port: 8889
+})
 
-// connection.connect((err) => {
-//     if (err) {
-//         console.log("MySQL connection error : ", err)
-//         return 
-//     }
-//     console.log("MySQL successfully connected.")
-// })
+connection.connect((err) => {
+    if (err) {
+        console.log("MySQL connection error : ", err)
+        return 
+    }
+    console.log("MySQL successfully connected.")
+})
 
 // Read accounts
 router.route("/").get(admin_auth, (req, res) => {
