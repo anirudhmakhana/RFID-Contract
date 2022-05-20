@@ -28,7 +28,7 @@
     "express": "^4.17.3",
     "mongoose": "^6.3.0",
     "mysql2": "^2.3.3",
-    "sequelize": "^6.19.0"
+    "sequelize": "^6.19.2"
   },
   "name": "rfid-contract",
   "description": "This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.",
