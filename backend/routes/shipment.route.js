@@ -18,7 +18,6 @@ const Node = require("../models/node")
 const mysql = require('mysql2');
 const sequelize = require('../database');
 const ShipmentScan = require('../models/shipmentScan');
-
 const connection = mysql.createConnection( {
     host: 'localhost',
     user: process.env.DB_USER,
@@ -82,6 +81,10 @@ router.route("/").get(auth, (req, res) => {
                     shipments[i].nextNode = scan.nextNode
                     result_ship.push(shipments[i])
                 }
+                let origin = await Node.findOne( {where:{nodeCode:shipment.originNode}})
+                if (origin) {
+                    shipments[i].companyCode = origin.companyCode
+                }
             }
             res.status(200).json(result_ship)
 
@@ -111,7 +114,10 @@ router.route('/:uid').get(auth, async (req,res) => {
                 shipment.status = scan.status
                 shipment.nextNode = scan.nextNode
             }
-            
+            let origin = await Node.findOne( {where:{nodeCode:shipment.originNode}})
+            if (origin) {
+                shipment.companyCode = origin.companyCode
+            }
             res.status(200).json(shipment)
 
         }
@@ -414,7 +420,7 @@ router.route("/centralize/update/").put(auth, async (req,res) => {
 
     const scan_data = 
     {txnHash: transactionHash, 
-    scannedAt: originNode,
+    scannedAt: currentNode,
     status: status,
     nextNode: nextNode,
     scannedTime: scannedTime}

@@ -60,7 +60,7 @@ router.route("/").get(auth, (req, res) => {
 router.route("/").post(auth, async (req,res) => {
     const { uid: uid, scannedAt: scannedAt, scannedTime: scannedTime, status: status, transactionHash:transactionHash, nextNode:nextNode} = req.body
     const data = {txnHash: transactionHash, 
-    scannedAt: originNode,
+    scannedAt: scannedAt,
     status: status,
     nextNode: nextNode,
     scannedTime: scannedTime}
