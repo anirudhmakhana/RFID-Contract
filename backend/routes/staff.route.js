@@ -5,7 +5,7 @@ let express = require('express'),
     SALT_WORK_FACTOR = 10
     jwt = require('jsonwebtoken')
 
-
+const mysql = require('mysql2');
 const auth = require('../utils/auth')
 const admin_auth = require('../utils/admin-auth')
 const manager_auth = require('../utils/manager-auth')
