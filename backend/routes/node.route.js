@@ -49,7 +49,7 @@ router.route("/").get(auth, (req, res) => {
 
 // Read active nodes
 router.route("/active/").get(auth, (req, res) => {
-    AdminAccount.findAll({where:{status:"active"}})
+    Node.findAll({where:{status:"active"}})
     .then(results => {
         if ( results.length < 1) {
             res.status(404).json( {error: "No node found!"});
@@ -152,16 +152,16 @@ router.route("/:nodeCode").delete(auth, (req, res) => {
 
 // return node that related to the shipment (currentNode or used to be)
 router.route('/related/:shipmentId').get(auth, async (req,res) => {
-    ScanData.aggregate('scannedAt', 'DISTINCT', { plain: false, where:{uid:req.params.shipmentId} } )
-    .then(results => {
-        if ( results.length < 1) {
+    const query = "SELECT DISTINCT scanData.scannedAt FROM scanData JOIN shipmentScans ON scanData.txnHash = shipmentScans.scanDatumTxnHash WHERE shipmentScans.uid = ?"
+    connection.query( query, [req.params.shipmentId], (error, results) => {
+        if (error) {
+            res.status(400).json( {error: error.message})
+        }
+        else if ( results.length < 1) {
             res.status(404).json( {error: "No node found!"});
         } else {
             res.status(200).json(results)
         }
-    })
-    .catch( error => {
-        res.status(400).json( {error: error.message})
     })
 
 })
@@ -206,7 +206,7 @@ router.route('/stock/samedestination/:destinationNode').get(auth, async (req,res
             res.status(400).json( {error: error.message})
         }
         else if ( results.length < 1) {
-            res.status(404).json( {error: "No shipment found!"});
+            res.status(404).json( {error: "No node found!"});
         } else {
             res.status(200).json(results)
         }
