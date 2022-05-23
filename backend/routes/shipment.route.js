@@ -18,6 +18,7 @@ const Node = require("../models/node")
 const mysql = require('mysql2');
 const sequelize = require('../database');
 const ShipmentScan = require('../models/shipmentScan');
+const abiDecoder = require('abi-decoder');
 const connection = mysql.createConnection( {
     host: 'localhost',
     user: process.env.DB_USER,
@@ -465,5 +466,39 @@ router.route("/centralize/update/").put(auth, async (req,res) => {
     
 })
 
+router.route("/audit/:txnHash").get(auth, async (req,res) => {
+    web3Initializer()
+        .then( tools => {
+            // console.log(tools)
+        let web3 = tools.web3
+        web3.eth.getTransaction(req.params.txnHash, function(err, tx){
+            abiDecoder.addABI(contractABI);
+            let tx_data = tx.input;
+        
+            let decoded_data = abiDecoder.decodeMethod(tx_data);
+            let params = decoded_data.params;
+        
+            let param_values = [];
+            label = ['Shipment id', 'Description', 'Origin Node', 'Scanned at', 'Destination Node', 'Producer', 'Status', 'Scanned time']
+            for( let i = 0; i < params[0].value.length; i++){
+                if ( label[i].toLowerCase() == 'scanned time') {
+                    console.log( new Date(Number(params[0].value[i])).toDateString())
+                    param_values.push(label[i] + " : " +( new Date(Number(params[0].value[i])).toDateString()))
+                }  else {
+                    param_values.push(label[i] + " : " + params[0].value[i])
+                }
+            }
+            console.log(params)
+            res.status(200).json(param_values)
+        })
+    })
+
+    .catch( err => {
+        console.log("txn error: ", err)
+        res.status(403).json(err)
+    })
+    
+    
+})
 
 module.exports = router;
