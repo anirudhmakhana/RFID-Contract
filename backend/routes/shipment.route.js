@@ -473,28 +473,34 @@ router.route("/audit/:txnHash").get(auth, async (req,res) => {
         let web3 = tools.web3
         web3.eth.getTransaction(req.params.txnHash, function(err, tx){
             abiDecoder.addABI(contractABI);
-            let tx_data = tx.input;
+            try {
+                let tx_data = tx.input;
         
-            let decoded_data = abiDecoder.decodeMethod(tx_data);
-            let params = decoded_data.params;
-        
-            let param_values = [];
-            label = ['Shipment id', 'Description', 'Origin Node', 'Scanned at', 'Destination Node', 'Producer', 'Status', 'Scanned time']
-            for( let i = 0; i < params[0].value.length; i++){
-                if ( label[i].toLowerCase() == 'scanned time') {
-                    console.log( new Date(Number(params[0].value[i])).toDateString())
-                    param_values.push({label:label[i], val:( new Date(Number(params[0].value[i])).toDateString())})
-                } else if (label[i].toLowerCase() == 'status') {
-                    param_values.push({label:label[i], val: params[0].value[i].toUpperCase()})
-                }  else {
-                    param_values.push({label:label[i], val: params[0].value[i]})
+                let decoded_data = abiDecoder.decodeMethod(tx_data);
+                let params = decoded_data.params;
+            
+                let param_values = [];
+                label = ['Shipment id', 'Description', 'Origin Node', 'Scanned at', 'Destination Node', 'Producer', 'Status', 'Scanned time']
+                for( let i = 0; i < params[0].value.length; i++){
+                    if ( label[i].toLowerCase() == 'scanned time') {
+                        console.log( new Date(Number(params[0].value[i])).toDateString())
+                        param_values.push({label:label[i], val:( new Date(Number(params[0].value[i])).toDateString())})
+                    } else if (label[i].toLowerCase() == 'status') {
+                        param_values.push({label:label[i], val: params[0].value[i].toUpperCase()})
+                    }  else {
+                        param_values.push({label:label[i], val: params[0].value[i]})
+                    }
                 }
+                console.log(params)
+                res.status(200).json(param_values)
             }
-            console.log(params)
-            res.status(200).json(param_values)
+            catch (err) {
+                console.log("txn error: ", err)
+                res.status(403).json(err)
+            }
         })
+        
     })
-
     .catch( err => {
         console.log("txn error: ", err)
         res.status(403).json(err)
