@@ -483,9 +483,11 @@ router.route("/audit/:txnHash").get(auth, async (req,res) => {
             for( let i = 0; i < params[0].value.length; i++){
                 if ( label[i].toLowerCase() == 'scanned time') {
                     console.log( new Date(Number(params[0].value[i])).toDateString())
-                    param_values.push(label[i] + " : " +( new Date(Number(params[0].value[i])).toDateString()))
+                    param_values.push({label:label[i], val:( new Date(Number(params[0].value[i])).toDateString())})
+                } else if (label[i].toLowerCase() == 'status') {
+                    param_values.push({label:label[i], val: params[0].value[i].toUpperCase()})
                 }  else {
-                    param_values.push(label[i] + " : " + params[0].value[i])
+                    param_values.push({label:label[i], val: params[0].value[i]})
                 }
             }
             console.log(params)
